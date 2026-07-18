@@ -1,3 +1,4 @@
+# Optional legacy single-node installer (Docker Hub stack is preferred for Nimbus multi-region).
 #!/usr/bin/env bash
 set -e
 

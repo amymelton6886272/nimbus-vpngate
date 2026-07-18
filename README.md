@@ -239,3 +239,23 @@ This is expected when residential/mobile nodes are available. Hosting is only us
 ```text
 git@github.com:nimbus-vpngate.git
 ```
+
+
+## Repository layout
+
+```text
+Dockerfile / docker-compose.yml   # multi-region stack
+docker/entrypoint.sh
+vpngate_manager.py                # scanner + region workers
+proxy_server.py / vpn_utils.py
+hub/                              # Hub UI + nginx
+scripts/validate_regions.py
+install.sh                        # legacy single-node installer (optional)
+data/                             # runtime only (gitignored except .gitkeep)
+```
+
+## Security notes
+
+- Do not commit `hub/.htpasswd` or `data/`.
+- Override `HUB_API_TOKEN` via `.env` in production.
+- Proxy ports should stay LAN-only (firewall).

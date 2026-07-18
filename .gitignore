@@ -68,3 +68,6 @@ Desktop.ini
 hub/.htpasswd
 data/*
 !data/.gitkeep
+
+.env
+.env.local

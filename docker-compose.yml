@@ -22,7 +22,7 @@ x-vpngate-common: &vpngate-common
     UI_HOST: 0.0.0.0
     UI_PORT: 8787
     CONNECTION_ENABLED: "true"
-    HUB_API_TOKEN: nimbus-hub-internal
+    HUB_API_TOKEN: ${HUB_API_TOKEN:-nimbus-hub-internal}
     LOCAL_PROXY_MAX_CONNECTIONS: 64
     LOCAL_PROXY_WORKER_THREADS: 80
     LOCAL_PROXY_IDLE_TIMEOUT: 60
