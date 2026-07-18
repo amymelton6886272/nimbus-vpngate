@@ -1,261 +1,205 @@
 # Nimbus VPNGate Hub
 
-Nimbus VPNGate Hub is a multi-region VPNGate gateway stack. It runs one VPN manager per region, exposes an HTTP/SOCKS5 proxy for each region, and provides a central Hub page for unified monitoring and operations.
+多区域 **VPNGate OpenVPN** 网关栈：独立 **scanner** 负责节点测活与共享池，各区域 **worker** 只负责连接与本地代理，**Hub** 统一管理。
 
-Current regions:
+当前区域：
 
-- `JP` Japan
-- `US` United States
-- `KR` Korea
-- `RU` Russia
-- `VN` Vietnam
-- `OTHER` all available nodes except JP/US/KR/RU/VN
+| 区域 | 容器 | 代理端口 | 说明 |
+| --- | --- | ---: | --- |
+| JP | `nimbus-jp` | `20001` | 日本 |
+| US | `nimbus-us` | `20002` | 美国（节点常稀缺，可自动备援） |
+| KR | `nimbus-kr` | `20003` | 韩国 |
+| RU | `nimbus-ru` | `20004` | 俄罗斯 |
+| VN | `nimbus-vn` | `20005` | 越南 |
+| OTHER | `nimbus-other` | `20006` | 除 JP/US/KR/RU/VN 外的国家 |
+| Hub | `nimbus-hub` | `8788` | 管理面板 |
+| Scanner | `nimbus-scanner` | — | 扫描/共享池（不对外暴露代理） |
 
-## Features
+仓库：
 
-- Docker Compose based multi-container deployment.
-- Central Hub dashboard on port `8788`.
-- Per-region proxy ports and per-region management ports.
-- Region filtering so each container only shows its own country/region nodes.
-- `OTHER` region excludes the dedicated fixed regions.
-- Best-node connection prefers residential/mobile nodes first, then falls back to hosting nodes.
-- Built-in health checks, log rotation, and runtime resource display.
-- Public `/healthz` only returns minimal health state; detailed health is available through authenticated Hub API proxy.
-- Hub Basic Auth with `.htpasswd`, kept out of Git.
+```text
+https://github.com/amymelton6886272/nimbus-vpngate
+git@github.com:amymelton6886272/nimbus-vpngate.git
+```
 
-## Quick Start
+## 架构
 
-Requirements:
+```text
+VPNGate → nimbus-scanner（测活 OpenVPN + 可选 FreeProxyDB）
+        → shared_nodes / configs / shared_proxies
+        → region workers（优先连 OpenVPN；不足/失败则备援）
+        → 每区本地 HTTP+SOCKS5 代理 :20001–20006
+        → Hub :8788 管理与节点池
+```
 
-- Linux host with Docker and Docker Compose
-- `/dev/net/tun` enabled
-- root or equivalent permission for Docker and TUN
+- **OpenVPN 优先**：有可用 VPN 时连最佳节点。  
+- **备援补充**：VPN 不足时列表展示 FreeProxyDB；**无可用 VPN 时自动切备援**。  
+- 客户端始终使用 **区域代理端口**，不要直接拿列表里的 FreeProxyDB IP 当代理。
 
-Clone and enter the project:
+## 功能
+
+- Docker Compose 多容器部署（scanner + 6 worker + hub）
+- Hub 仪表盘：区域状态、连接最佳/备援、同步共享、出口检测
+- 节点池页：检测状态可视化、手动复测、检测时间 / 下次周期检测
+- 共享节点池瘦身（配置与元数据分离）
+- 代理来源限制（可配 `PROXY_ALLOW_CIDRS`）+ 建议防火墙仅放行内网
+- Hub Basic Auth（`hub/.htpasswd`，不进 Git）
+- 容器间 API 使用 `X-Nimbus-Hub-Token` / `HUB_API_TOKEN`
+
+## 快速开始
+
+依赖：
+
+- Linux + Docker / Docker Compose
+- 主机启用 `/dev/net/tun`
+- 有权限使用 `NET_ADMIN` 与 TUN 设备
 
 ```bash
-git clone git@github.com:nimbus-vpngate.git
+git clone git@github.com:amymelton6886272/nimbus-vpngate.git
 cd nimbus-vpngate
-```
 
-Create Hub Basic Auth credentials:
-
-```bash
+# Hub 登录密码
 mkdir -p hub
-htpasswd -nbB admin '<strong-password>' > hub/.htpasswd
-```
+htpasswd -nbB admin '你的强密码' > hub/.htpasswd
+# 若无 htpasswd: apt-get update && apt-get install -y apache2-utils
 
-If `htpasswd` is not installed:
+# 可选：覆盖内部 API Token
+cp .env.example .env
+# 编辑 .env 中的 HUB_API_TOKEN
 
-```bash
-apt-get update
-apt-get install -y apache2-utils
-```
-
-Start the stack:
-
-```bash
 docker compose up -d --build
 ```
 
-Open the Hub:
+打开 Hub：
 
 ```text
-http://<server-ip>:8788/
+http://<服务器IP>:8788/
 ```
 
-## Ports
+使用 Basic Auth（`admin` / 你在 `.htpasswd` 里设置的密码）。
 
-| Region | Container | Proxy | Region UI |
-| --- | --- | ---: | ---: |
-| JP | `nimbus-jp` | `20001` | `21001` |
-| US | `nimbus-us` | `20002` | `21002` |
-| KR | `nimbus-kr` | `20003` | `21003` |
-| RU | `nimbus-ru` | `20004` | `21004` |
-| VN | `nimbus-vn` | `20005` | `21005` |
-| OTHER | `nimbus-other` | `20006` | `21006` |
-| Hub | `nimbus-hub` | - | `8788` |
+## 代理地址
 
-Proxy URLs:
+同一端口同时支持 **HTTP 代理** 与 **SOCKS5**：
 
 ```text
-socks5://<server-ip>:20001  # JP
-socks5://<server-ip>:20002  # US
-socks5://<server-ip>:20003  # KR
-socks5://<server-ip>:20004  # RU
-socks5://<server-ip>:20005  # VN
-socks5://<server-ip>:20006  # OTHER
+socks5://<服务器IP>:20001  # JP
+socks5://<服务器IP>:20002  # US
+socks5://<服务器IP>:20003  # KR
+socks5://<服务器IP>:20004  # RU
+socks5://<服务器IP>:20005  # VN
+socks5://<服务器IP>:20006  # OTHER
 ```
 
-The proxy listener accepts both HTTP and SOCKS5 style clients through the same exposed proxy port.
+也可用 `http://<服务器IP>:2000x`。
 
-## Hub Operations
+**安全建议：代理端口与 Hub 仅对内网开放**（例如 `10.10.10.0/24`），不要裸奔公网。
 
-The Hub can:
-
-- refresh all region states
-- connect the best node in each region
-- disconnect all regions
-- test proxy exits
-- open each region's native management UI
-- show current active node, IP type, exit IP, memory usage, uptime, and node counts
-
-Best-node policy:
-
-1. Prefer `residential` and `mobile`.
-2. If no residential/mobile node is available, use `hosting`.
-3. Within the same type group, prefer lower latency and then higher score.
-
-## Configuration
-
-Main configuration lives in `docker-compose.yml`.
-
-Important environment variables:
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `TARGET_VALID_NODES` | `1` | Minimum target valid nodes per scan |
-| `MAX_SCAN_ROWS` | `40` | Max VPNGate rows to scan |
-| `OPENVPN_TEST_TIMEOUT_SECONDS` | `12` | OpenVPN test timeout |
-| `MIN_NODE_SPEED` | `0` | Disable minimum speed filter by default |
-| `MAX_NODE_LATENCY_MS` | `0` | Disable hard latency filter by default |
-| `MAX_NODE_SESSIONS` | `0` | Disable session-count filter by default |
-| `ROUTING_MODE` | per service | `fixed_region` or `auto` |
-| `FORCE_COUNTRY` | per service | Fixed country code for region containers |
-| `EXCLUDE_COUNTRIES` | OTHER only | Countries excluded from OTHER |
-| `HUB_API_TOKEN` | compose value | Internal Hub-to-node API token |
-
-Region metadata for the Hub lives in:
-
-```text
-hub/regions.json
+```bash
+# 示例：仅放行内网（按你的网段修改）
+# ufw allow from 10.10.10.0/24 to any port 8788 proto tcp
+# ufw allow from 10.10.10.0/24 to any port 20001:20006 proto tcp
 ```
 
-When adding or changing regions, update both `docker-compose.yml` and `hub/regions.json`, then run:
+> 旧文档中的 `21001–21006` 分区管理端口 **已不再映射**。区域 Web UI 默认不对公网暴露，请通过 Hub 操作。
+
+## Hub 常用操作
+
+| 操作 | 说明 |
+| --- | --- |
+| 触发扫描 | 让 scanner 刷新 VPNGate / 共享池 |
+| 连接最佳/备援 | 有 VPN 连 VPN；无 VPN 自动备援 |
+| 同步共享 / 同步并检测 | worker 拉取共享并测出口 |
+| 节点池 → 复测 | 手动复测所选或全部「待检测」OpenVPN 节点 |
+| 退出备援 | 关闭 FreeProxyDB 上游，可再连 OpenVPN |
+
+节点选择大致策略：
+
+1. 优先住宅/移动类型（若有质量字段）  
+2. 再考虑延迟、质量分  
+3. 失败冷却，避免死循环打坏节点  
+
+## 配置
+
+主配置：`docker-compose.yml`  
+区域元数据：`hub/regions.yaml` / `hub/regions.json`（改完可跑校验）
 
 ```bash
 python3 scripts/validate_regions.py
 ```
 
-## Security Notes
+重要环境变量：
 
-- Do not commit `hub/.htpasswd`; it is ignored by `.gitignore`.
-- `hub/.htpasswd.example` is only a placeholder.
-- The Hub is protected by Basic Auth.
-- Node APIs are accessed through the Hub using `X-Nimbus-Hub-Token`.
-- Public `/healthz` is intentionally minimal and does not expose detailed runtime data.
-- If exposing proxy ports to the internet, restrict access with a firewall or cloud security group.
+| 变量 | 说明 |
+| --- | --- |
+| `IS_SCANNER` | scanner 为 `true`，worker 为 `false` |
+| `FORCE_COUNTRY` | 区域锁定国家（JP/US/…） |
+| `EXCLUDE_COUNTRIES` | OTHER 排除的国家列表 |
+| `HUB_API_TOKEN` | Hub→节点内部 Token（可用 `.env` 覆盖） |
+| `CHECK_INTERVAL_SECONDS` | 扫描周期（默认约 1260 秒） |
+| `LOCAL_PROXY_MAX_CONNECTIONS` | 代理最大连接数 |
+| `PROXY_ALLOW_CIDRS` | 代理允许的客户端网段（可选） |
+| `FREEPROXYDB_*` | 备援拉取/测活相关 |
 
-Recommended firewall example:
+## 仓库结构
 
-```bash
-ufw allow 8788/tcp
-ufw allow 20001:20006/tcp
-ufw deny 21001:21006/tcp
+```text
+Dockerfile / docker-compose.yml
+docker/entrypoint.sh
+vpngate_manager.py          # scanner + workers 主逻辑
+proxy_server.py / vpn_utils.py
+hub/                        # Hub 静态页 + nginx + regions
+scripts/validate_regions.py
+install.sh                  # 可选：旧版单机安装（多区域请用 Compose）
+.env.example
+data/                       # 运行时数据（gitignore，仅保留 .gitkeep）
 ```
 
-The `21001-21006` region UI ports are useful for direct troubleshooting, but they should not be public unless you understand the risk.
+## 安全
 
-## Maintenance
+- 不要提交 `hub/.htpasswd`、`data/`、`.env`
+- 生产环境务必修改 `HUB_API_TOKEN` 与 Hub 密码
+- 公网暴露代理端口前必须做来源限制；本项目默认假设内网使用
+- `/healthz` 仅返回最小状态；详细信息走 Hub 鉴权 API
 
-Show status:
+## 运维
 
 ```bash
 docker compose ps
-```
-
-Follow logs:
-
-```bash
-docker compose logs -f nimbus-hub
+docker compose logs -f nimbus-scanner
 docker compose logs -f nimbus-jp
-```
 
-Rebuild after code changes:
-
-```bash
+# 改代码后
 docker compose up -d --build
-```
 
-Restart only the Hub:
-
-```bash
+# 仅重建 Hub
 docker compose up -d --no-deps --force-recreate nimbus-hub
 ```
 
-Validate region wiring:
+日志建议在宿主机对 `data/*/vpngate.log` 做 logrotate（`copytruncate`，单文件上限如 100M）。
+
+容器内健康检查：
 
 ```bash
-python3 scripts/validate_regions.py
+docker exec nimbus-jp curl -sf http://127.0.0.1:8787/healthz
 ```
 
-Check a node container health endpoint:
+经 Hub（需 Basic Auth）：
 
 ```bash
-curl -fsS http://127.0.0.1:21001/healthz
+curl -fsS -u admin:'密码' http://127.0.0.1:8788/api/jp/health
 ```
 
-Check detailed health through Hub:
+## 排障
 
-```bash
-curl -fsS -u admin:'<password>' http://127.0.0.1:8788/api/jp/health
-```
+| 现象 | 处理 |
+| --- | --- |
+| 无 `/dev/net/tun` | 主机开启 TUN；compose 需 `NET_ADMIN` + tun 设备 |
+| Hub 卡片全失败 | `docker compose ps` / 查对应 worker 日志；确认 `.htpasswd` 存在 |
+| 某国 0 可用节点 | VPNGate 本身波动；点「触发扫描」或等周期扫描；US 等可走备援 |
+| 点备援超时 | 免费代理质量差；稍后「刷新状态」或换区；可看 worker 日志 |
+| 外网狂扫代理端口 | 正常；请防火墙只放行内网，并保留 `PROXY_ALLOW_CIDRS` |
 
-## Troubleshooting
+## License
 
-### `/dev/net/tun` is missing
-
-Enable TUN/TAP in the VPS provider panel or host kernel. Containers require:
-
-```yaml
-devices:
-  - /dev/net/tun:/dev/net/tun
-cap_add:
-  - NET_ADMIN
-```
-
-### Hub opens but node cards show errors
-
-Check:
-
-```bash
-docker compose ps
-docker compose logs --tail 100 nimbus-hub
-docker compose logs --tail 100 nimbus-jp
-```
-
-Also verify `hub/.htpasswd` exists on the host.
-
-### A region has zero available nodes
-
-VPNGate availability changes constantly. Click "拉取并检测" in the Hub or wait for the next scan. Some countries may temporarily have no usable nodes.
-
-### "Connect best" does not choose hosting
-
-This is expected when residential/mobile nodes are available. Hosting is only used as fallback when no residential/mobile node is available.
-
-## Repository
-
-```text
-git@github.com:nimbus-vpngate.git
-```
-
-
-## Repository layout
-
-```text
-Dockerfile / docker-compose.yml   # multi-region stack
-docker/entrypoint.sh
-vpngate_manager.py                # scanner + region workers
-proxy_server.py / vpn_utils.py
-hub/                              # Hub UI + nginx
-scripts/validate_regions.py
-install.sh                        # legacy single-node installer (optional)
-data/                             # runtime only (gitignored except .gitkeep)
-```
-
-## Security notes
-
-- Do not commit `hub/.htpasswd` or `data/`.
-- Override `HUB_API_TOKEN` via `.env` in production.
-- Proxy ports should stay LAN-only (firewall).
+见 `LICENSE`。
