@@ -1,0 +1,8 @@
+[
+  { "key": "JP", "slug": "jp", "proxyPort": 20001, "role": "worker", "country": "JP" },
+  { "key": "US", "slug": "us", "proxyPort": 20002, "role": "worker", "country": "US", "note": "节点稀缺" },
+  { "key": "KR", "slug": "kr", "proxyPort": 20003, "role": "worker", "country": "KR" },
+  { "key": "RU", "slug": "ru", "proxyPort": 20004, "role": "worker", "country": "RU" },
+  { "key": "VN", "slug": "vn", "proxyPort": 20005, "role": "worker", "country": "VN", "note": "常无可用节点" },
+  { "key": "OTHER", "slug": "other", "proxyPort": 20006, "role": "worker", "exclude": ["JP", "US", "KR", "RU", "VN"] }
+]

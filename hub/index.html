@@ -1,0 +1,1843 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Nimbus Hub</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #08090a;
+      --panel: #111216;
+      --panel-2: #16181d;
+      --panel-hover: #1a1c22;
+      --line: rgba(255,255,255,0.08);
+      --line-strong: rgba(255,255,255,0.12);
+      --text: #f3f4f6;
+      --muted: #8b929e;
+      --muted-2: #6b7280;
+      --primary: #5e6ad2;
+      --primary-soft: rgba(94,106,210,0.14);
+      --primary-border: rgba(94,106,210,0.35);
+      --ok: #10b981;
+      --ok-soft: rgba(16,185,129,0.12);
+      --ok-border: rgba(16,185,129,0.28);
+      --warn: #f59e0b;
+      --warn-soft: rgba(245,158,11,0.12);
+      --warn-border: rgba(245,158,11,0.28);
+      --bad: #f43f5e;
+      --bad-soft: rgba(244,63,94,0.12);
+      --bad-border: rgba(244,63,94,0.28);
+      --link: #8b95e8;
+      --radius: 12px;
+      --shadow: 0 8px 28px rgba(0,0,0,0.28);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Noto Sans SC", sans-serif;
+      background:
+        radial-gradient(900px 420px at 8% -10%, rgba(94,106,210,0.16), transparent 55%),
+        radial-gradient(700px 360px at 100% 0%, rgba(16,185,129,0.06), transparent 45%),
+        var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 40px; }
+    header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 16px; margin-bottom: 16px;
+    }
+    .brand { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .brand-row { display: flex; align-items: center; gap: 10px; }
+    .logo {
+      width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+      background: var(--primary-soft); border: 1px solid var(--primary-border); color: #c7cdff;
+    }
+    h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 13px; line-height: 1.45; max-width: 760px; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    button, a.btn {
+      appearance: none; border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+      min-height: 36px; padding: 0 12px; border-radius: 9px; font-size: 13px; font-weight: 600;
+      text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      gap: 6px; transition: background .15s ease, border-color .15s ease, transform .12s ease, opacity .15s ease;
+      white-space: nowrap;
+    }
+    button:hover, a.btn:hover { background: var(--panel-hover); border-color: var(--line-strong); }
+    button:active, a.btn:active { transform: translateY(1px); }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none !important; }
+    button.primary {
+      background: linear-gradient(180deg, #6a76e0 0%, #5e6ad2 100%);
+      border-color: transparent; color: #fff; box-shadow: 0 4px 14px rgba(94,106,210,0.28);
+    }
+    button.primary:hover { background: linear-gradient(180deg, #7480ea 0%, #6672da 100%); }
+    button.danger { border-color: var(--bad-border); background: var(--bad-soft); color: #fecdd3; }
+    button.ghost { background: transparent; }
+    button.sm { min-height: 30px; padding: 0 10px; font-size: 12px; border-radius: 8px; }
+
+    .batch-bar {
+      display: none; margin-bottom: 12px; padding: 10px 12px; border-radius: 12px;
+      border: 1px solid var(--primary-border); background: rgba(94,106,210,0.10);
+      color: #c7cdff; font-size: 13px; font-weight: 600;
+      align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .batch-bar.show { display: flex; }
+    .batch-bar .left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .batch-bar .right { color: var(--muted); font-weight: 500; font-size: 12px; white-space: nowrap; }
+    .shared-box {
+      margin-bottom: 12px; padding: 12px 14px; border-radius: 12px;
+      border: 1px solid var(--line); background: rgba(17,18,22,0.9);
+      box-shadow: var(--shadow);
+    }
+    .shared-top { display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:8px; }
+    .shared-title { font-size:13px; font-weight:750; }
+    .shared-age { color: var(--muted); font-size:12px; }
+    .shared-grid { display:flex; flex-wrap:wrap; gap:8px; }
+    .shared-chip {
+      border:1px solid var(--line); background:rgba(255,255,255,0.03);
+      border-radius:999px; padding:4px 10px; font-size:12px; color:var(--muted);
+    }
+    .shared-chip strong { color: var(--text); font-weight:700; }
+    .warn-text { color: #f5a524; }
+
+    .scan-bar { height: 8px; background: rgba(255,255,255,.06); border-radius: 999px; overflow: hidden; margin-top: 10px; }
+    .scan-bar > i { display:block; height:100%; width:0; background: linear-gradient(90deg, #5e6ad2, #8b5cf6); transition: width .35s ease; }
+    .shared-box.stale { border-color: rgba(245,165,36,.45); box-shadow: 0 0 0 1px rgba(245,165,36,.15) inset; }
+    .shared-box.scanning { border-color: rgba(94,106,210,.45); }
+    .stale-tag { color:#f5a524; font-weight:600; }
+
+
+    .summary {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px; margin-bottom: 14px;
+    }
+    .stat {
+      background: rgba(17,18,22,0.86); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 14px 14px 12px; box-shadow: var(--shadow); min-width: 0;
+    }
+    .stat-label { color: var(--muted); font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+    .stat-value { font-size: 24px; font-weight: 750; letter-spacing: -0.03em; line-height: 1.1; }
+    .stat-note { margin-top: 6px; color: var(--muted-2); font-size: 12px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 12px; }
+    .card {
+      background: rgba(17,18,22,0.9); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px; min-height: 360px; box-shadow: var(--shadow);
+      display: flex; flex-direction: column; transition: border-color .15s ease, background .15s ease;
+      position: relative; overflow: hidden;
+    }
+    .card:hover { border-color: var(--line-strong); }
+    .card.ready { border-color: rgba(16,185,129,0.22); }
+    .card.bad { border-color: rgba(244,63,94,0.22); }
+    .card.warn { border-color: rgba(245,158,11,0.18); }
+    .card.busy { border-color: rgba(94,106,210,0.45); }
+    .card.busy::after {
+      content: ""; position: absolute; left: 0; top: 0; height: 2px; width: 100%;
+      background: linear-gradient(90deg, transparent, var(--primary), transparent);
+      animation: sheen 1.2s linear infinite;
+    }
+    @keyframes sheen { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+    .head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+    .name-wrap { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .flag {
+      width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+      font-size: 12px; font-weight: 800; letter-spacing: 0.04em;
+      background: var(--primary-soft); border: 1px solid var(--primary-border); color: #c7cdff; flex-shrink: 0;
+    }
+    .name { font-size: 17px; font-weight: 750; letter-spacing: -0.01em; display: flex; align-items: center; gap: 6px; }
+    .advanced { margin-top: 8px; }
+    .advanced summary { cursor: pointer; color: var(--muted); font-size: 12px; user-select: none; }
+    .role-tag {
+      font-size: 10px; font-weight: 800; letter-spacing: 0.04em; padding: 2px 6px; border-radius: 999px;
+      border: 1px solid var(--primary-border); background: var(--primary-soft); color: #c7cdff;
+    }
+    .proxy-line {
+      margin-top: 2px; color: var(--muted); font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px; border-radius: 999px;
+      padding: 5px 10px; font-size: 12px; font-weight: 700; border: 1px solid transparent; white-space: nowrap;
+    }
+    .badge .dot {
+      width: 7px; height: 7px; border-radius: 50%; background: currentColor;
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
+    }
+    .ok { color: #6ee7b7; background: var(--ok-soft); border-color: var(--ok-border); }
+    .warn { color: #fcd34d; background: var(--warn-soft); border-color: var(--warn-border); }
+    .bad { color: #fda4af; background: var(--bad-soft); border-color: var(--bad-border); }
+    .busy-badge { color: #c7cdff; background: var(--primary-soft); border-color: var(--primary-border); }
+
+    dl { margin: 0; display: grid; grid-template-columns: 72px 1fr; row-gap: 8px; column-gap: 10px; font-size: 13px; }
+    dt { color: var(--muted); font-weight: 600; }
+    dd { margin: 0; min-width: 0; word-break: break-word; color: var(--text); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+    .pill {
+      display: inline-flex; align-items: center; padding: 2px 7px; border-radius: 999px;
+      border: 1px solid var(--line); background: rgba(255,255,255,0.03); color: var(--muted);
+      font-size: 11px; font-weight: 700; margin-left: 4px;
+    }
+    .pill.ok { color: #6ee7b7; border-color: var(--ok-border); background: var(--ok-soft); }
+    .pill.warn { color: #fcd34d; border-color: var(--warn-border); background: var(--warn-soft); }
+
+    .actions { display: flex; gap: 7px; margin: 12px 0 10px; flex-wrap: wrap; }
+    .nodes { border-top: 1px solid var(--line); padding-top: 10px; margin-top: auto; }
+    .nodes-title {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      color: var(--muted); font-size: 12px; font-weight: 700; margin-bottom: 6px;
+    }
+    .node {
+      display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center;
+      padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .node:last-child { border-bottom: 0; }
+    .node-title {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .node-meta { color: var(--muted); margin-top: 3px; font-size: 12px; }
+    .status-line { min-height: 18px; margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.4; }
+    .status-line.error { color: #fda4af; }
+    .status-line.busy { color: #c7cdff; }
+
+    .bottom { margin-top: 16px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 12px; }
+    .panel {
+      background: rgba(17,18,22,0.9); border: 1px solid var(--line); border-radius: 14px;
+      padding: 14px; box-shadow: var(--shadow);
+    }
+    .panel h2 { margin: 0 0 10px; font-size: 14px; font-weight: 750; }
+    .activity-log {
+      display: grid; gap: 7px; max-height: 180px; overflow: auto;
+      color: var(--muted); font-size: 12.5px; line-height: 1.4;
+    }
+    .activity-item {
+      display: grid; grid-template-columns: 64px 1fr; gap: 8px; padding-bottom: 7px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .activity-item:last-child { border-bottom: 0; padding-bottom: 0; }
+    .activity-time {
+      color: var(--muted-2); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px;
+    }
+    .meta-line { color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .meta-kv { display: grid; grid-template-columns: 88px 1fr; gap: 6px 10px; margin-top: 8px; font-size: 12.5px; }
+    .meta-kv dt { color: var(--muted-2); }
+    .meta-kv dd { margin: 0; color: var(--text); }
+
+    .toast {
+      position: fixed; right: 16px; bottom: 16px; z-index: 50; display: grid; gap: 8px; pointer-events: none;
+    }
+    .toast-item {
+      min-width: 220px; max-width: 380px; background: rgba(17,18,22,0.96);
+      border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px 12px;
+      box-shadow: var(--shadow); color: var(--text); font-size: 13px; animation: fadeIn .18s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    a { color: var(--link); }
+    .empty { color: var(--muted-2); font-size: 12.5px; padding: 8px 0; }
+    .spinner {
+      width: 12px; height: 12px; border: 2px solid rgba(255,255,255,0.18);
+      border-top-color: currentColor; border-radius: 50%; animation: spin .8s linear infinite; display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 900px) {
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bottom { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 720px) {
+      header { display: block; }
+      .toolbar { justify-content: flex-start; margin-top: 12px; }
+      .grid { grid-template-columns: 1fr; }
+      .proxy-line { max-width: 180px; }
+    }
+
+    .nav-tabs { display:flex; gap:8px; margin: 14px 0 10px; flex-wrap:wrap; }
+    .view-tab {
+      border:1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+      color: var(--text-dim);
+      border-radius: 999px;
+      padding: 7px 14px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .view-tab.active {
+      color: #fff;
+      border-color: rgba(94,106,210,0.55);
+      background: rgba(94,106,210,0.18);
+    }
+    .pool-toolbar {
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+      margin: 8px 0 12px;
+    }
+    .pool-toolbar input, .pool-toolbar select {
+      background: #0f1115;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+    }
+    .pool-toolbar input { min-width: 220px; flex: 1; }
+    .pool-stats {
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0,1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .pool-stat {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .pool-stat .k { color: var(--text-dim); font-size: 12px; }
+    .pool-stat .v { font-size: 22px; font-weight: 650; margin-top: 4px; }
+    .pool-progress {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+    .pool-progress .row { display:flex; justify-content:space-between; gap:10px; margin-bottom:8px; font-size:13px; color:var(--text-dim); }
+    .pool-progress .bar {
+      height: 8px; border-radius: 999px; background: rgba(255,255,255,0.06); overflow:hidden;
+    }
+    .pool-progress .bar > i {
+      display:block; height:100%; width:0%;
+      background: linear-gradient(90deg, #5e6ad2, #8b5cf6);
+      transition: width .25s ease;
+    }
+    .pool-table-wrap {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: auto;
+      max-height: 68vh;
+    }
+    table.pool-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+      min-width: 980px;
+    }
+    table.pool-table th, table.pool-table td {
+      padding: 9px 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      text-align: left;
+      white-space: nowrap;
+    }
+    table.pool-table th {
+      position: sticky; top: 0;
+      background: #101218;
+      color: var(--text-dim);
+      z-index: 1;
+      font-weight: 600;
+    }
+    table.pool-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .st-pill {
+      display:inline-flex; align-items:center; gap:6px;
+      border-radius: 999px; padding: 2px 8px;
+      border: 1px solid var(--border);
+      font-size: 11px;
+    }
+    .st-pill.ok { color:#34d399; border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.08); }
+    .st-pill.bad { color:#f87171; border-color: rgba(248,113,113,.35); background: rgba(248,113,113,.08); }
+    .st-pill.wait { color:#fbbf24; border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.08); }
+    .st-pill.soft { color:#93c5fd; border-color: rgba(147,197,253,.35); background: rgba(147,197,253,.08); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .src-tag {
+      font-size: 10px; padding: 1px 6px; border-radius: 999px;
+      border: 1px solid var(--border); color: var(--text-dim);
+    }
+    .src-tag.ovpn { color:#a5b4fc; border-color: rgba(165,180,252,.35); }
+    .src-tag.fpdb { color:#f0abfc; border-color: rgba(240,171,252,.35); }
+    @media (max-width: 720px) {
+      .pool-stats { grid-template-columns: 1fr 1fr; }
+      .pool-toolbar input { min-width: 140px; }
+    }
+
+    .pool-table th.ops, .pool-table td.ops { width: 88px; white-space: nowrap; }
+    .pool-table th.chk, .pool-table td.chk { width: 36px; text-align: center; }
+    .pool-table tr.row-testing { background: rgba(251, 191, 36, 0.08); }
+    .pool-table tr.row-pending { background: rgba(148, 163, 184, 0.05); }
+    .st-pill.testing { color: #fbbf24; border-color: rgba(251,191,36,.4); animation: pulse 1.2s ease infinite; }
+    @keyframes pulse { 50% { opacity: .55; } }
+    .sched { font-size: 11px; color: var(--text-dim); line-height: 1.35; }
+    .sched b { color: var(--text); font-weight: 600; }
+    .pool-toolbar .grow { flex: 1; }
+    .pool-toolbar button.primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); border: none; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="brand-row">
+          <div class="logo">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/>
+              <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>
+            </svg>
+          </div>
+          <h1>Nimbus Hub</h1>
+        </div>
+        <div class="sub">扫描器负责节点可用性；区域容器只负责连接与代理；Hub 负责统一管理。</div>
+      </div>
+      <div class="toolbar">
+        <button id="scanNow" class="primary" type="button">触发扫描</button>
+        <button id="syncAll" type="button">全员同步共享</button>
+        <button id="connectAllBest" type="button">连接每区最佳</button>
+        <button id="disconnectAll" class="danger" type="button">断开全部</button>
+        <button id="refreshAll" type="button">刷新状态</button>
+        <button id="testAll" type="button">检测全部出口</button>
+      </div>
+    </header>
+
+    <div class="shared-box" id="sharedBox">
+      <div class="shared-top">
+        <div class="shared-title">共享扫描池（scanner）</div>
+        <div class="shared-age" id="sharedAge">读取中…</div>
+      <div class="scan-bar" id="scanBarWrap" style="display:none"><i id="scanBar"></i></div>
+      </div>
+      <div class="shared-grid" id="sharedGrid"><div class="shared-chip">等待数据</div></div>
+    </div>
+    <div id="batchBar" class="batch-bar">
+      <div class="left"><span class="spinner"></span><span id="batchText">批量操作进行中…</span></div>
+      <div class="right" id="batchProgress">0/0</div>
+    </div>
+
+    <div class="nav-tabs">
+      <button class="view-tab active" type="button" data-view="regions" id="tabRegions">区域网关</button>
+      <button class="view-tab" type="button" data-view="pool" id="tabPool">所有代理 / 节点池</button>
+    </div>
+
+    <div id="viewRegions">
+    <section class="summary" id="summary">
+      <div class="stat">
+        <div class="stat-label">在线区域</div>
+        <div class="stat-value" id="sumReady">-</div>
+        <div class="stat-note" id="sumReadyNote">就绪 / 总数</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">可用节点</div>
+        <div class="stat-value" id="sumNodes">-</div>
+        <div class="stat-note">本区可用节点合计</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">异常区域</div>
+        <div class="stat-value" id="sumBad">-</div>
+        <div class="stat-note">连接失败或读取失败</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">自动刷新</div>
+        <div class="stat-value" id="sumRefresh">5:00</div>
+        <div class="stat-note" id="sumMeta">等待首轮加载…</div>
+      </div>
+    </section>
+
+    <div id="grid" class="grid"></div>
+
+    </div><!-- /viewRegions -->
+
+    <div id="viewPool" style="display:none">
+      <div class="pool-stats">
+        <div class="pool-stat"><div class="k">OpenVPN 节点</div><div class="v" id="poolOvpnTotal">-</div></div>
+        <div class="pool-stat"><div class="k">已测 / 待测</div><div class="v" id="poolOvpnProgress">-</div></div>
+        <div class="pool-stat"><div class="k">OpenVPN 可用</div><div class="v" id="poolOvpnAvail">-</div></div>
+        <div class="pool-stat"><div class="k">备援代理可用</div><div class="v" id="poolFbAvail">-</div></div>
+      </div>
+      <div class="pool-progress">
+        <div class="row">
+          <span id="poolProgressText">检测进度</span>
+          <span id="poolProgressMeta">-</span>
+        </div>
+        <div class="bar"><i id="poolProgressBar"></i></div>
+      </div>
+      <div class="pool-toolbar">
+        <div id="poolLegend" class="shared-age" style="width:100%;margin:0 0 4px">备援默认会展示在列表中；筛选来源选「全部」或「备援 / FreeProxyDB」。OpenVPN 空区或出口失败时会启用备援出口。</div>
+        <input id="poolSearch" type="search" placeholder="搜索 IP / 国家 / ID / 协议" />
+        <select id="poolRegion">
+          <option value="">全部地区</option>
+          <option value="JP">JP</option>
+          <option value="US">US</option>
+          <option value="KR">KR</option>
+          <option value="RU">RU</option>
+          <option value="VN">VN</option>
+          <option value="OTHER">OTHER</option>
+        </select>
+        <select id="poolStatus">
+          <option value="">全部状态</option>
+          <option value="available">可用</option>
+          <option value="not_checked">待检测</option>
+          <option value="unavailable">不可用</option>
+          <option value="soft_available">弱可用</option>
+        </select>
+        <select id="poolSource">
+          <option value="">全部来源</option>
+          <option value="vpngate">OpenVPN / VPNGate</option>
+          <option value="freeproxydb">备援 / FreeProxyDB</option>
+        </select>
+        <button id="poolRefresh" type="button">刷新列表</button>
+        <button id="poolRetestSelected" type="button" class="primary">复测所选</button>
+        <button id="poolRetestPending" type="button">复测全部待检测</button>
+      </div>
+      <div id="poolSchedule" class="shared-age" style="width:100%;margin:0 0 10px">检测时间：- · 下次周期检测：-</div>
+      <div class="pool-table-wrap">
+        <table class="pool-table">
+          <thead>
+            <tr>
+              <th class="chk"><input type="checkbox" id="poolCheckAll" title="全选当前筛选" /></th>
+              <th>状态</th>
+              <th>地区</th>
+              <th>来源</th>
+              <th>协议</th>
+              <th>节点</th>
+              <th>延迟</th>
+              <th>质量</th>
+              <th>出口/备注</th>
+              <th>检测时间</th>
+              <th>下次检测</th>
+              <th class="ops">操作</th>
+            </tr>
+          </thead>
+          <tbody id="poolBody">
+            <tr><td colspan="12" class="empty">等待加载共享节点池…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bottom">
+      <section class="panel">
+        <h2>操作记录</h2>
+        <div id="activityLog" class="activity-log"></div>
+      </section>
+      <section class="panel">
+        <h2>系统信息</h2>
+        <div class="meta-line" id="metaText">正在初始化…</div>
+        <dl class="meta-kv" id="metaKv"></dl>
+      </section>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const defaultRegions = [
+      { key: "JP", slug: "jp", proxyPort: 20001, role: "worker" },
+      { key: "US", slug: "us", proxyPort: 20002, role: "worker" },
+      { key: "KR", slug: "kr", proxyPort: 20003, role: "worker" },
+      { key: "RU", slug: "ru", proxyPort: 20004, role: "worker" },
+      { key: "VN", slug: "vn", proxyPort: 20005, role: "worker" },
+      { key: "OTHER", slug: "other", proxyPort: 20006, exclude: ["JP", "US", "KR", "RU", "VN"] },
+    ];
+    let regions = [...defaultRegions];
+    const host = location.hostname;
+    const cleanOrigin = `${location.protocol}//${location.host}`;
+    if (location.username || location.password) {
+      history.replaceState(null, "", `${cleanOrigin}${location.pathname}${location.search}${location.hash}`);
+    }
+
+    const state = new Map();
+    const busyRegions = new Set();
+    const grid = document.getElementById("grid");
+    const activityLog = document.getElementById("activityLog");
+    const toastBox = document.getElementById("toast");
+    const batchBar = document.getElementById("batchBar");
+    const batchText = document.getElementById("batchText");
+    const batchProgress = document.getElementById("batchProgress");
+    const activities = [];
+    let batchRunning = false;
+    let refreshLeft = 300;
+    let lastRefreshAt = null;
+    const CONCURRENCY = 3;
+    // OpenVPN 本区可用数低于此值时，区域卡片也展示 FreeProxyDB 备援节点
+    const FALLBACK_SHOW_WHEN_OVPN_LT = 3;
+    let fallbackProxyList = []; // shared_proxies.json cache
+
+
+    function regionApi(region, path) {
+      return `${cleanOrigin}/api/${region.slug}${path}`;
+    }
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;",
+      }[char]));
+    }
+    function escapeAttr(value) { return escapeHtml(value); }
+
+    function toast(message) {
+      const el = document.createElement("div");
+      el.className = "toast-item";
+      el.textContent = message;
+      toastBox.appendChild(el);
+      setTimeout(() => el.remove(), 2600);
+    }
+
+    function addActivity(message) {
+      const time = new Date().toLocaleTimeString();
+      activities.unshift({ time, message });
+      if (activities.length > 40) activities.pop();
+      renderActivity();
+    }
+
+    function renderActivity() {
+      activityLog.innerHTML = activities.map(item => `
+        <div class="activity-item">
+          <div class="activity-time">${escapeHtml(item.time)}</div>
+          <div>${escapeHtml(item.message)}</div>
+        </div>
+      `).join("") || `<div class="empty">暂无操作记录</div>`;
+    }
+
+    function formatBytes(bytes) {
+      const value = Number(bytes || 0);
+      if (!value) return "-";
+      if (value < 1024 * 1024) return `${Math.round(value / 1024)} KiB`;
+      return `${(value / 1024 / 1024).toFixed(1)} MiB`;
+    }
+    function formatUptime(seconds) {
+      const value = Number(seconds || 0);
+      if (!value) return "-";
+      const h = Math.floor(value / 3600);
+      const m = Math.floor((value % 3600) / 60);
+      if (h > 0) return `${h}h ${m}m`;
+      return `${m}m`;
+    }
+    function formatCountdown(sec) {
+      const m = Math.floor(sec / 60);
+      const s = String(sec % 60).padStart(2, "0");
+      return `${m}:${s}`;
+    }
+
+    async function api(region, path, options = {}) {
+      const res = await fetch(regionApi(region, path), {
+        method: options.method || "GET",
+        headers: { "Content-Type": "application/json" },
+        body: options.body ? JSON.stringify(options.body) : undefined,
+      });
+      const text = await res.text();
+      let data = {};
+      try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { error: text }; }
+      if (!res.ok) {
+        throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      }
+      // 业务失败（如备援测活失败）：带 message 返回，由调用方提示，避免只显示 error
+      if (data.ok === false) {
+        const err = new Error(data.message || data.error || "操作失败");
+        err.data = data;
+        throw err;
+      }
+      return data;
+    }
+
+    function isRegionNode(region, node) {
+      const countryShort = String(node.country_short || "").trim().toUpperCase();
+      const id = String(node.id || "").trim().toUpperCase();
+      if (region.slug === "other") {
+        const excluded = new Set(region.exclude || []);
+        const idCountry = id.includes("_") ? id.split("_")[0] : "";
+        return !excluded.has(countryShort) && !excluded.has(idCountry);
+      }
+      const expected = region.key.toUpperCase();
+      return countryShort === expected || id.startsWith(`${expected}_`);
+    }
+    function availableRegionNodes(region, nodes) {
+      return nodes.filter(n => n.probe_status === "available" && isRegionNode(region, n));
+    }
+
+    function setRegionBusy(slug, busy, message = "") {
+      if (busy) busyRegions.add(slug);
+      else busyRegions.delete(slug);
+      const current = state.get(slug) || {};
+      state.set(slug, {
+        ...current,
+        busy,
+        message: message || current.message || "",
+        error: busy ? "" : current.error,
+      });
+      render();
+    }
+
+    function updateToolbarBusy() {
+      const disabled = batchRunning;
+      document.querySelectorAll("header button").forEach(btn => { btn.disabled = disabled; });
+    }
+
+    function showBatch(text, done, total) {
+      batchBar.classList.add("show");
+      batchText.textContent = text;
+      batchProgress.textContent = `${done}/${total}`;
+    }
+    function hideBatch() {
+      batchBar.classList.remove("show");
+    }
+
+    async function mapPool(items, limit, worker) {
+      const results = new Array(items.length);
+      let idx = 0;
+      async function run() {
+        while (idx < items.length) {
+          const i = idx++;
+          results[i] = await worker(items[i], i);
+        }
+      }
+      const runners = Array.from({ length: Math.min(limit, items.length) }, () => run());
+      await Promise.all(runners);
+      return results;
+    }
+
+    function badgeFor(regionState) {
+      if (regionState.busy) return `<span class="badge busy-badge"><span class="spinner"></span>处理中</span>`;
+      if (regionState.error) return `<span class="badge bad"><span class="dot"></span>异常</span>`;
+      if (!regionState.health) return `<span class="badge warn"><span class="dot"></span>读取中</span>`;
+      const h = regionState.health || {};
+      if (h.is_scanning || h.shared_scanning) {
+        const spb = h.scan_progress || window.__scanProgress || {};
+        const curb = (Array.isArray(spb.current_list) && spb.current_list[0])
+          || (spb.current && spb.current !== "done" ? String(spb.current).split(" | ")[0] : "");
+        const short = curb ? String(curb).slice(0, 28) : "";
+        return `<span class="badge busy-badge"><span class="spinner"></span>扫描中${short ? " · " + escapeHtml(short) : ""}</span>`;
+      }
+      const fallbackOnline = !!(h.fallback_mode && (h.proxy_ok || (h.proxy_ip && h.proxy_ip !== "-")));
+      if (h.ready || h.openvpn_active) {
+        return `<span class="badge ok"><span class="dot"></span>已连接</span>`;
+      }
+      if (fallbackOnline) {
+        return `<span class="badge ok"><span class="dot"></span>备援在线</span>`;
+      }
+      if (h.fallback_mode) return `<span class="badge warn"><span class="dot"></span>备援代理</span>`;
+      if (!(h.ready || h.openvpn_active || h.proxy_ok) && Number((window.__fallbackByRegion||{})[String(regionState.regionSlug||"").toUpperCase()]||(window.__fallbackByRegion||{})[String((regionState.health&&regionState.health.force_country)||"").toUpperCase()]||0) > 0)
+        return `<span class="badge warn" title="无 VPN 时点「连接最佳」将自动用备援"><span class="dot"></span>可自动备援</span>`;
+      if (h.empty_region) return `<span class="badge warn"><span class="dot"></span>无可用节点</span>`;
+      if (h.region_fail_pause_until && h.region_fail_pause_until*1000 > Date.now()) return `<span class="badge warn"><span class="dot"></span>冷却中</span>`;
+      if (h.proxy_listener_ready) return `<span class="badge warn"><span class="dot"></span>待连接</span>`;
+      return `<span class="badge bad"><span class="dot"></span>未就绪</span>`;
+    }
+
+    function cardClass(regionState) {
+      if (regionState.busy) return "busy";
+      if (regionState.error) return "bad";
+      if (!regionState.health) return "warn";
+      if (regionState.health.ready || regionState.health.openvpn_active || (regionState.health.fallback_mode && (regionState.health.proxy_ok || (regionState.health.proxy_ip && regionState.health.proxy_ip !== "-")))) return "ready";
+      if (regionState.health.proxy_listener_ready) return "warn";
+      return "bad";
+    }
+
+    function copyText(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      return Promise.resolve();
+    }
+
+    function renderRegion(region) {
+      const s = state.get(region.slug) || {};
+      s.regionSlug = region.slug;
+      const health = s.health || {};
+      const nodes = s.nodes || [];
+      const active = nodes.find(n => n.active) || nodes.find(n => n.id && n.id === health.active_node_id);
+      const allAvailable = nodes.filter(n => n.probe_status === "available");
+      const notChecked = nodes.filter(n => !n.probe_status || n.probe_status === "not_checked").length;
+      const unavailable = nodes.filter(n => n.probe_status === "unavailable").length;
+      const available = availableRegionNodes(region, nodes);
+      const scanning = !!(health.is_scanning || (region.scanner && health.shared_scanning));
+      const regionKey = escapeHtml(region.key);
+      const regionSlug = escapeAttr(region.slug);
+      const proxyUrl = `socks5://${host}:${region.proxyPort}`;
+      const isBusy = !!s.busy;
+      // 统一节点池：OpenVPN 优先展示，不足时用备援补齐（始终同列表）
+      const fbNodes = fallbackProxiesForRegion(region.key);
+      const OVPN_SHOW = 5;
+      const TOTAL_SHOW = 8;
+      const ovpnShow = available.slice(0, OVPN_SHOW);
+      const needFb = Math.max(0, TOTAL_SHOW - ovpnShow.length);
+      // 无 VPN 时多展示一些备援；有 VPN 时也展示少量备援作补充
+      const fbShowCount = available.length === 0 ? Math.min(TOTAL_SHOW, fbNodes.length) : Math.min(Math.max(needFb, available.length < 3 ? 3 : 2), fbNodes.length);
+      const fbShow = fbNodes.slice(0, fbShowCount);
+      const usingFb = !!(health.fallback_mode && (health.proxy_ok || (health.proxy_ip && health.proxy_ip !== "-")));
+
+      const ovpnRows = ovpnShow.map(n => `
+        <div class="node">
+          <div>
+            <div class="node-title">${n.active ? "● " : ""}${escapeHtml(n.id || "-")} <span class="src-tag ovpn">OpenVPN</span></div>
+            <div class="node-meta">
+              ${escapeHtml(n.country || n.country_short || regionKey)}
+              · ${escapeHtml(n.latency_ms || n.ping || "-")} ms
+              · ${escapeHtml(n.ip_type || "unknown")}
+              ${n.quality_score != null ? ` · Q${escapeHtml(n.quality_score)}` : ""}
+              · 优先
+            </div>
+          </div>
+          <button class="sm" type="button" data-action="connect" data-region="${regionSlug}" data-id="${escapeAttr(n.id || "")}" ${isBusy || batchRunning ? "disabled" : ""}>连接</button>
+        </div>
+      `).join("");
+
+      const fbRowsHtml = fbShow.map(p => {
+        const title = `${p.protocol || "http"}://${p.ip || p.host || "?"}:${p.port || "?"}`;
+        const lat = p.latency_ms || p.ping || "-";
+        const note = p.egress_ip || p.probe_message || p.anonymity || "备援";
+        const using = !!(health.fallback_mode && health.fallback_proxy && String(health.fallback_proxy).includes(String(p.port||"")));
+        return `
+        <div class="node">
+          <div>
+            <div class="node-title">${using ? "● " : ""}${escapeHtml(title)} <span class="src-tag fpdb">备援</span></div>
+            <div class="node-meta">
+              ${escapeHtml(p.country || regionKey)}
+              · ${escapeHtml(lat)} ms
+              · ${escapeHtml(String(note).slice(0, 36))}
+              · ${available.length ? "补充" : "无VPN时自动"}
+            </div>
+          </div>
+          <button class="sm" type="button" data-action="enable_fallback" data-region="${regionSlug}" ${isBusy || batchRunning ? "disabled" : ""}>${using || usingFb ? "使用中" : "连接"}</button>
+        </div>`;
+      }).join("");
+
+      let nodeRows = ovpnRows + fbRowsHtml;
+      if (!nodeRows) {
+        const spLive = health.scan_progress || window.__scanProgress || {};
+        const curLive = (Array.isArray(spLive.current_list) && spLive.current_list.length)
+          ? spLive.current_list.join(" · ")
+          : (spLive.current && spLive.current !== "done" ? spLive.current : "");
+        const scanLine = scanning
+          ? `${regionKey} 正在扫描${curLive ? "：" + escapeHtml(curLive) : "…"}${spLive.tested != null && spLive.total ? `（${spLive.tested}/${spLive.total}）` : ""}`
+          : "";
+        let emptyMsg = `暂无 ${regionKey} 节点（OpenVPN / 备援均无）`;
+        if (scanning) emptyMsg = scanLine;
+        else if (notChecked > 0) emptyMsg = `${regionKey} 有 ${notChecked} 个未测 OpenVPN（排队中）`;
+        nodeRows = `<div class="empty">${emptyMsg}</div>`;
+      }
+
+      const statusMsg = s.error || s.message || "";
+      const statusClass = s.error ? "error" : (isBusy ? "busy" : "");
+      const roleTag = `<span class="role-tag">${escapeHtml((region.role || "worker").toUpperCase())}</span>`;
+
+      return `
+        <section class="card ${cardClass(s)}" data-region="${regionSlug}">
+          <div class="head">
+            <div class="name-wrap">
+              <div class="flag">${regionKey.slice(0, 2)}</div>
+              <div>
+                <div class="name">${regionKey}${roleTag}</div>
+                <div class="proxy-line" title="${escapeAttr(proxyUrl)}">${escapeHtml(proxyUrl)}</div>
+              </div>
+            </div>
+            ${badgeFor(s)}
+          </div>
+          <dl>
+            <dt>模式</dt>
+            <dd>
+              ${escapeHtml(health.routing_mode || "-")}
+              ${health.force_country ? `<span class="pill">${escapeHtml(health.force_country)}</span>` : ""}
+            </dd>
+            <dt>OpenVPN</dt>
+            <dd>
+              ${health.openvpn_active ? (health.ready ? "就绪" : "运行中") : (health.fallback_mode && (health.proxy_ok || (health.proxy_ip && health.proxy_ip !== "-")) ? "备援出口" : "未连接")}
+              ${health.proxy_listener_ready ? `<span class="pill ok">代理监听</span>` : `<span class="pill warn">代理未监听</span>`}
+            </dd>
+            <dt>当前节点</dt>
+            <dd class="mono">${escapeHtml(active?.id || health.active_node_id || "-")}</dd>
+            <dt>出口</dt>
+            <dd>
+              ${escapeHtml(health.proxy_ip || "-")}
+              ${health.proxy_latency_ms ? ` · ${escapeHtml(health.proxy_latency_ms)} ms` : ""}
+            </dd>
+            <dt>类型</dt>
+            <dd>${escapeHtml(active?.ip_type || health.active_ip_type || "-")}</dd>
+            <dt>资源</dt>
+            <dd>${formatBytes(health.memory_rss_bytes)} · ${formatUptime(health.uptime_seconds)}</dd>
+            <dt>节点</dt>
+            <dd>
+              ${available.length} 本区可用 / ${allAvailable.length} 列表可用 / ${nodes.length || 0} 当前列表
+              ${notChecked ? ` · ${notChecked} 待测` : ""}
+              ${fbNodes.length ? ` · 备援 ${fbNodes.length}` : ""}
+              ${available.length < FALLBACK_SHOW_WHEN_OVPN_LT && fbNodes.length ? ` <span class="pill warn">节点不足·显示备援</span>` : ""}
+              ${scanning ? ` <span class="pill warn">扫描中</span>` : ""}
+            </dd>
+            <dt>共享</dt>
+            <dd>
+              ${health.shared_age_seconds != null ? (health.shared_age_seconds < 60 ? `${health.shared_age_seconds}s 前` : `${Math.floor(health.shared_age_seconds/60)} 分钟前`) : "-"}
+              · 可用 ${escapeHtml(health.shared_available_count ?? "-")}/${escapeHtml(health.shared_node_count ?? "-")}
+              · gen ${escapeHtml(health.shared_generation || "-")}
+            </dd>
+            ${(() => {
+              const fbMap = (window.__fallbackByRegion || {});
+              const n = Number(fbMap[regionKey] || 0);
+              return n > 0 ? `<dt>备援可用</dt><dd>${n} <span class="pill">FreeProxyDB</span>${health.fallback_mode ? " · 使用中" : " · 空区或出口失败时启用"}</dd>` : "";
+            })()}
+            ${health.fallback_mode ? `<dt>出口模式</dt><dd class="warn-text">OpenVPN 空区，已用 FreeProxyDB 备援：${escapeHtml(health.fallback_proxy || "-")}</dd>` : ""}
+            ${!health.fallback_mode && (health.empty_region || (available.length === 0 && !(health.ready || health.openvpn_active))) ? `<dt>提示</dt><dd class="warn-text">${escapeHtml(region.note || "共享池暂无本区可用节点 / 连接失败冷却中")}</dd>` : ""}
+            ${health.region_fail_pause_until && health.region_fail_pause_until*1000 > Date.now() ? `<dt>冷却</dt><dd>自动连接暂停至 ${new Date(health.region_fail_pause_until*1000).toLocaleTimeString()}</dd>` : ""}
+          </dl>
+          <div class="actions">
+            <button class="sm primary" type="button" data-action="best" data-region="${regionSlug}" ${isBusy || batchRunning ? "disabled" : ""}>连接最佳/备援</button>
+            ${(() => {
+              const fbN = Number((window.__fallbackByRegion||{})[regionKey] || fbNodes.length || 0);
+              const fbOn = !!(health.fallback_mode && (health.proxy_ok || (health.proxy_ip && health.proxy_ip !== "-")));
+              if (fbOn) {
+                return `<button class="sm" type="button" data-action="disable_fallback" data-region="${regionSlug}" ${isBusy || batchRunning ? "disabled" : ""}>退出备援</button>`;
+              }
+              if (fbN > 0) {
+                return `<button class="sm" type="button" data-action="enable_fallback" data-region="${regionSlug}" ${isBusy || batchRunning ? "disabled" : ""}>切换备援</button>`;
+              }
+              return "";
+            })()}
+            <button class="sm" type="button" data-action="proxy" data-region="${regionSlug}" ${isBusy || batchRunning ? "disabled" : ""}>检测出口</button>
+            <button class="sm danger" type="button" data-action="disconnect" data-region="${regionSlug}" ${isBusy || batchRunning ? "disabled" : ""}>断开</button>
+            <button class="sm ghost" type="button" data-action="copy" data-region="${regionSlug}" data-copy="${escapeAttr(proxyUrl)}">复制代理</button>
+          </div>
+          <details class="advanced">
+            <summary>高级</summary>
+            <div class="actions" style="margin-top:8px">
+              <button class="sm" type="button" data-action="refresh" data-region="${regionSlug}" ${isBusy || batchRunning ? "disabled" : ""}>同步共享</button>
+              <button class="sm" type="button" data-action="check" data-region="${regionSlug}" ${isBusy || batchRunning ? "disabled" : ""}>同步并检测</button>
+            </div>
+          </details>
+          <div class="nodes">
+            <div class="nodes-title">
+              <span>${regionKey} 节点池（OpenVPN 优先）</span>
+              <span>${available.length} VPN + ${fbNodes.length} 备援</span>
+            </div>
+            ${nodeRows}
+          </div>
+          <div class="status-line ${statusClass}">${escapeHtml(statusMsg)}</div>
+        </section>
+      `;
+    }
+
+    function renderSummary() {
+      let ready = 0, bad = 0, nodes = 0;
+      for (const region of regions) {
+        const s = state.get(region.slug) || {};
+        const health = s.health || {};
+        const list = s.nodes || [];
+        nodes += availableRegionNodes(region, list).length;
+        if (s.error) bad += 1;
+        else if (health.ready || health.openvpn_active || (health.fallback_mode && (health.proxy_ok || (health.proxy_ip && health.proxy_ip !== "-")))) ready += 1;
+        else if (!health.proxy_listener_ready) bad += 1;
+      }
+      document.getElementById("sumReady").textContent = `${ready}/${regions.length}`;
+      document.getElementById("sumReadyNote").textContent = ready === regions.length ? "全部就绪" : "部分区域未连接";
+      // 若 JP health 带共享可用数，优先展示共享池可用
+      const jpState = state.get("jp") || {};
+      const sharedAvail = jpState.health && jpState.health.shared_available_count;
+      document.getElementById("sumNodes").textContent = String(sharedAvail != null ? sharedAvail : nodes);
+      document.getElementById("sumNodes").nextElementSibling && null;
+      const sumNodesNote = document.querySelector('#summary .stat:nth-child(2) .stat-note');
+      if (sumNodesNote) sumNodesNote.textContent = sharedAvail != null ? "共享池可用节点" : "本区可用节点合计";
+      document.getElementById("sumBad").textContent = String(bad);
+      document.getElementById("sumRefresh").textContent = formatCountdown(refreshLeft);
+      document.getElementById("sumMeta").textContent = lastRefreshAt
+        ? `上次刷新 ${lastRefreshAt.toLocaleTimeString()}`
+        : "等待首轮加载…";
+      document.getElementById("metaText").textContent = `Hub: ${cleanOrigin} · 主机: ${host} · 批量并发: ${CONCURRENCY} · 架构: scanner + workers`;
+      document.getElementById("metaKv").innerHTML = `
+        <dt>区域数</dt><dd>${regions.length}</dd>
+        <dt>在线</dt><dd>${ready}</dd>
+        <dt>异常</dt><dd>${bad}</dd>
+        <dt>刷新周期</dt><dd>5 分钟</dd>
+        <dt>最后刷新</dt><dd>${lastRefreshAt ? lastRefreshAt.toLocaleString() : "-"}</dd>
+      `;
+    }
+
+    function render() {
+      grid.innerHTML = regions.map(renderRegion).join("");
+      renderSummary();
+      updateToolbarBusy();
+    }
+
+    async function loadRegion(region) {
+      const current = state.get(region.slug) || {};
+      if (current.busy) return;
+      state.set(region.slug, { ...current, message: "正在读取状态…", error: "" });
+      render();
+      try {
+        const [health, nodeData] = await Promise.all([
+          api(region, "/health"),
+          api(region, "/nodes"),
+        ]);
+        state.set(region.slug, {
+          health,
+          nodes: nodeData.nodes || [],
+          nodeState: nodeData.state || {},
+          message: "状态已更新",
+          error: "",
+          busy: false,
+        });
+      } catch (err) {
+        state.set(region.slug, { ...current, error: err.message || String(err), message: "", busy: false });
+      }
+      render();
+    }
+
+    async function runAction(region, action, id, copyTextValue, options = {}) {
+      const silent = !!options.silent;
+      if (action === "copy") {
+        try {
+          await copyText(copyTextValue || "");
+          toast(`已复制 ${region.key} 代理地址`);
+          addActivity(`${region.key} 代理地址已复制`);
+        } catch (_) {
+          toast("复制失败");
+        }
+        return { ok: true };
+      }
+
+      if (busyRegions.has(region.slug) && !options.force) {
+        return { ok: false, error: "区域忙碌中" };
+      }
+
+      // 连接最佳时：已连接且健康则跳过
+      if (action === "best") {
+        const cur = state.get(region.slug) || {};
+        const h = cur.health || {};
+        if ((h.ready || h.openvpn_active || (h.fallback_mode && h.proxy_ok)) && h.proxy_ip && h.proxy_ip !== "-") {
+          if (!silent) {
+            addActivity(`${region.key} 已连接且出口可用，跳过`);
+          }
+          setRegionBusy(region.slug, false, "已连接，跳过");
+          return { ok: true, skipped: true, message: "已连接，跳过" };
+        }
+      }
+
+      setRegionBusy(region.slug, true, actionLabel(action) + "…");
+      try {
+        if (action === "refresh") {
+          const result = await api(region, "/refresh_nodes", { method: "POST" });
+          const msg = result.message || "已同步共享节点";
+          setRegionBusy(region.slug, false, msg);
+          if (!silent) {
+            addActivity(`${region.key} 重新拉取：${msg}`);
+            toast(`${region.key} 同步完成`);
+          }
+          await loadRegion(region);
+          return { ok: true, message: msg };
+        }
+        if (action === "check") {
+          const result = await api(region, "/check", { method: "POST" });
+          const msg = result.message || "拉取检测完成";
+          setRegionBusy(region.slug, false, msg);
+          if (!silent) {
+            addActivity(`${region.key} 拉取检测：${msg}`);
+            toast(`${region.key} 检测完成`);
+          }
+          await loadRegion(region);
+          return { ok: result.ok !== false, message: msg, proxy: result.proxy };
+        }
+        if (action === "proxy") {
+          const result = await api(region, "/test_proxy", { method: "POST" });
+          const msg = result.ok
+            ? `出口 IP：${result.ip || "-"}，延迟 ${result.latency_ms || "-"} ms`
+            : (result.error || "代理检测失败");
+          setRegionBusy(region.slug, false, msg);
+          if (!silent) {
+            addActivity(`${region.key} 出口检测：${result.ip || msg}`);
+            toast(`${region.key} 出口检测完成`);
+          }
+          await loadRegion(region);
+          return { ok: !!result.ok, ip: result.ip, latency: result.latency_ms, message: msg };
+        }
+        if (action === "disconnect") await api(region, "/disconnect", { method: "POST" });
+        if (action === "connect") await api(region, "/connect", { method: "POST", body: { id } });
+        if (action === "enable_fallback") {
+          try {
+            const result = await api(region, "/enable_fallback", { method: "POST", body: {} });
+            const msg = result.message || "备援已启用";
+            setRegionBusy(region.slug, false, msg);
+            if (!silent) {
+              addActivity(`${region.key} 切换备援：${msg}${result.proxy_ip ? " · 出口 " + result.proxy_ip : ""}`);
+              toast(`${region.key} 备援已启用`);
+            }
+            await loadRegion(region);
+            return { ok: true, message: msg, proxy_ip: result.proxy_ip };
+          } catch (e) {
+            const data = e && e.data ? e.data : {};
+            const msg = (data && data.message) || e.message || "备援启用失败";
+            setRegionBusy(region.slug, false, msg);
+            state.set(region.slug, { ...state.get(region.slug), error: msg, message: "", busy: false });
+            render();
+            if (!silent) {
+              addActivity(`${region.key} 切换备援失败：${msg}`);
+              toast(`${region.key} ${msg}`);
+            }
+            await loadRegion(region);
+            return { ok: false, message: msg };
+          }
+        }
+        if (action === "disable_fallback") {
+          const result = await api(region, "/disable_fallback", { method: "POST", body: {} });
+          const msg = result.message || "已退出备援";
+          setRegionBusy(region.slug, false, msg);
+          if (!silent) {
+            addActivity(`${region.key} ${msg}`);
+            toast(`${region.key} 已退出备援`);
+          }
+          await loadRegion(region);
+          return { ok: true, message: msg };
+        }
+        if (action === "best") {
+          // 服务端：有 VPN 连 VPN，无 VPN 自动备援
+          const result = await api(region, "/connect_best", { method: "POST" });
+          const node = result.node || {};
+          const mode = result.mode || (result.fallback_mode ? "fallback" : "openvpn");
+          if (!silent) {
+            if (mode === "fallback") {
+              addActivity(`${region.key} 无 VPN，已自动备援：${result.proxy_ip || node.id || "-"}`);
+              toast(`${region.key} 已自动连接备援`);
+            } else {
+              addActivity(`${region.key} 连接最佳 VPN：${node.id || "-"}（${node.ip_type || "unknown"}）`);
+              toast(`${region.key} 已连接最佳 VPN`);
+            }
+          }
+          setRegionBusy(region.slug, false, mode === "fallback" ? `备援 ${result.proxy_ip || ""}`.trim() : `已连接 ${node.id || ""}`.trim());
+          await loadRegion(region);
+          return { ok: true, node };
+        }
+        if (action === "disconnect" && !silent) {
+          addActivity(`${region.key} 已断开`);
+          toast(`${region.key} 已断开`);
+        }
+        if (action === "refresh" && !silent) addActivity(`${region.key} 已启动重新拉取`);
+        if (action === "check" && !silent) addActivity(`${region.key} 拉取并检测完成`);
+        if (action === "connect" && !silent) addActivity(`${region.key} 连接节点：${id}`);
+        setRegionBusy(region.slug, false, "操作已提交");
+        await loadRegion(region);
+        return { ok: true };
+      } catch (err) {
+        const msg = err.message || String(err);
+        setRegionBusy(region.slug, false, "");
+        state.set(region.slug, { ...state.get(region.slug), error: msg, message: "", busy: false });
+        render();
+        if (!silent) {
+          addActivity(`${region.key} 操作失败：${msg}`);
+          toast(`${region.key} 操作失败`);
+        }
+        return { ok: false, error: msg };
+      }
+    }
+
+    function actionLabel(action) {
+      return ({
+        refresh: "重新拉取",
+        check: "拉取检测",
+        proxy: "检测出口",
+        enable_fallback: "切换备援",
+        disable_fallback: "退出备援",
+        disconnect: "断开连接",
+        connect: "连接节点",
+        best: "连接最佳",
+      })[action] || "操作中";
+    }
+
+    async function runBatch(action, title) {
+      if (batchRunning) return;
+      if (action === "disconnect" && !confirm("确认断开全部网关连接？")) return;
+
+      batchRunning = true;
+      updateToolbarBusy();
+      const total = regions.length;
+      let done = 0;
+      let ok = 0;
+      let fail = 0;
+      let skipped = 0;
+      showBatch(title, done, total);
+      addActivity(`开始${title}（并发 ${CONCURRENCY}）`);
+
+      const results = await mapPool(regions, CONCURRENCY, async (region) => {
+        const result = await runAction(region, action, "", "", { silent: true });
+        done += 1;
+        if (result?.skipped) skipped += 1;
+        else if (result?.ok) ok += 1;
+        else fail += 1;
+        showBatch(`${title}：${region.key} 完成`, done, total);
+        return { region, result };
+      });
+
+      // 汇总
+      const details = results.map(({ region, result }) => {
+        if (result?.skipped) return `${region.key}=跳过`;
+        if (result?.ok) {
+          if (action === "proxy") return `${region.key}=${result.ip || "ok"}`;
+          if (action === "best") return `${region.key}=${result.node?.id || "ok"}`;
+          return `${region.key}=ok`;
+        }
+        return `${region.key}=失败`;
+      }).join("，");
+
+      const summary = `${title}完成：成功 ${ok} / 跳过 ${skipped} / 失败 ${fail}`;
+      addActivity(summary);
+      addActivity(details);
+      toast(summary);
+      hideBatch();
+      batchRunning = false;
+      updateToolbarBusy();
+      await loadAll(true);
+    }
+
+    async function loadAll(fromBatch = false) {
+      if (batchRunning && !fromBatch) return;
+      await loadSharedMeta();
+      await loadFallbackProxies();
+      await mapPool(regions, CONCURRENCY, (region) => loadRegion(region));
+      lastRefreshAt = new Date();
+      refreshLeft = 300;
+      renderSummary();
+    }
+
+    grid.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-action]");
+      if (!target) return;
+      const region = regions.find(item => item.slug === target.dataset.region);
+      if (!region) return;
+      runAction(region, target.dataset.action, target.dataset.id || "", target.dataset.copy || "");
+    });
+
+    document.getElementById("refreshAll").addEventListener("click", () => loadAll());
+    document.getElementById("testAll").addEventListener("click", () => runBatch("proxy", "检测全部出口"));
+    document.getElementById("connectAllBest").addEventListener("click", () => runBatch("best", "连接每区最佳"));
+    document.getElementById("disconnectAll").addEventListener("click", () => runBatch("disconnect", "断开全部"));
+    document.getElementById("syncAll").addEventListener("click", () => runBatch("refresh", "全员同步共享"));
+    document.getElementById("scanNow").addEventListener("click", async () => {
+      if (batchRunning) return;
+      batchRunning = true; updateToolbarBusy();
+      showBatch("触发扫描器扫描", 0, 1);
+      try {
+        const res = await fetch(`${cleanOrigin}/api/scanner/scan`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || data.ok === false) throw new Error(data.error || `HTTP ${res.status}`);
+        addActivity(`扫描器：${data.message || "已触发"}`);
+        toast(data.message || "已触发扫描");
+        await loadSharedMeta();
+      } catch (err) {
+        addActivity(`触发扫描失败：${err.message || err}`);
+        toast("触发扫描失败");
+      } finally {
+        hideBatch(); batchRunning = false; updateToolbarBusy();
+      }
+    });
+
+    async function loadRegions() {
+      try {
+        const res = await fetch(`${cleanOrigin}/regions.json`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const loaded = await res.json();
+        if (!Array.isArray(loaded) || loaded.length === 0) throw new Error("regions.json 格式无效");
+        // 保留 scanner 标记（默认 JP）
+        regions = loaded.map(item => ({
+          ...item,
+          role: item.role || "worker",
+          scanner: false,
+        }));
+      } catch (err) {
+        addActivity(`地区配置读取失败，已使用内置配置：${err.message || err}`);
+      }
+    }
+
+    
+
+    function regionBucket(code) {
+      const c = String(code || "").toUpperCase().slice(0, 2);
+      return ["JP","US","KR","RU","VN"].includes(c) ? c : "OTHER";
+    }
+
+    async function loadFallbackProxies() {
+      try {
+        const res = await fetch(`${cleanOrigin}/shared_proxies.json`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const raw = await res.json();
+        fallbackProxyList = Array.isArray(raw) ? raw : [];
+        const by = {};
+        for (const p of fallbackProxyList) {
+          if ((p.probe_status || "") !== "available") continue;
+          const r = String(p.region || regionBucket(p.country || "")).toUpperCase();
+          by[r] = (by[r] || 0) + 1;
+        }
+        window.__fallbackByRegion = by;
+      } catch (err) {
+        // keep previous list
+        console.warn("fallback proxies load failed", err);
+      }
+    }
+
+    function fallbackProxiesForRegion(regionKey) {
+      const key = String(regionKey || "").toUpperCase();
+      return (fallbackProxyList || []).filter(p => {
+        if ((p.probe_status || "") !== "available") return false;
+        const r = String(p.region || regionBucket(p.country || "")).toUpperCase();
+        return r === key;
+      });
+    }
+
+        async function loadSharedMeta() {
+      let meta = null;
+      // 1) 始终读 shared_meta.json（含实时 scan_progress.current）
+      try {
+        const res = await fetch(`${cleanOrigin}/shared_meta.json`, { cache: "no-store" });
+        if (res.ok) meta = await res.json();
+      } catch (_) {}
+
+      // 2) 叠加 scanner health（补字段；进度以 updated_at 更新的为准）
+      try {
+        const res = await fetch(`${cleanOrigin}/api/scanner/health`, { cache: "no-store" });
+        if (res.ok) {
+          const health = await res.json();
+          if (health && (health.shared_generation || health.shared_node_count || health.role || health.scan_progress)) {
+            const hp = health.scan_progress || {};
+            const mp = (meta && meta.scan_progress) || {};
+            const hUp = Number(hp.updated_at || 0);
+            const mUp = Number(mp.updated_at || 0);
+            const preferHealthProgress = hUp > mUp;
+            meta = {
+              ...(meta || {}),
+              scanned_at: health.shared_scanned_at || (meta && meta.scanned_at),
+              generation: health.shared_generation || (meta && meta.generation),
+              node_count: health.shared_node_count || (meta && meta.node_count),
+              available_count: health.shared_available_count != null ? health.shared_available_count : (meta && meta.available_count),
+              country_total: health.shared_country_total || (meta && meta.country_total) || {},
+              country_available: health.shared_country_available || (meta && meta.country_available) || {},
+              scanning: !!(health.shared_scanning || health.is_scanning || (meta && meta.scanning)),
+              scan_progress: preferHealthProgress ? { ...mp, ...hp } : { ...hp, ...mp },
+              fallback_available_count: health.fallback_available_count || (meta && meta.fallback_available_count) || 0,
+              fallback_by_region: health.fallback_by_region || (meta && meta.fallback_by_region) || {},
+              role: health.role || (meta && meta.role),
+            };
+          }
+        }
+      } catch (_) {}
+
+      // 3) 再回退区域 health
+      if (!meta || !(meta.node_count || meta.generation || meta.scan_progress)) {
+        try {
+          const any = regions[0] || { slug: "jp" };
+          const health = await api(any, "/health");
+          if (health && (health.shared_generation || health.shared_node_count)) {
+            meta = {
+              ...(meta || {}),
+              scanned_at: health.shared_scanned_at || (meta && meta.scanned_at),
+              generation: health.shared_generation || (meta && meta.generation),
+              node_count: health.shared_node_count || (meta && meta.node_count),
+              available_count: health.shared_available_count != null ? health.shared_available_count : (meta && meta.available_count),
+              country_total: health.shared_country_total || (meta && meta.country_total) || {},
+              country_available: health.shared_country_available || (meta && meta.country_available) || {},
+              scanning: !!(health.shared_scanning || health.is_scanning || (meta && meta.scanning)),
+              scan_progress: (meta && meta.scan_progress) || health.scan_progress || {},
+            };
+          }
+        } catch (_) {}
+      }
+
+      if (!meta) {
+        document.getElementById("sharedAge").textContent = "共享摘要读取失败";
+        document.getElementById("sharedGrid").innerHTML = `<div class="shared-chip">无共享数据</div>`;
+        return;
+      }
+
+      // 3) 始终叠加 FreeProxyDB 备援摘要（列表默认可见；启用仍仅空区）
+      try {
+        const fRes = await fetch(`${cleanOrigin}/shared_proxies_meta.json`, { cache: "no-store" });
+        if (fRes.ok) {
+          const fm = await fRes.json();
+          meta.fallback_available_count = Number(fm.available_count || meta.fallback_available_count || 0);
+          meta.fallback_by_region = fm.by_region || meta.fallback_by_region || {};
+          meta.fallback_scanned_at = fm.scanned_at || meta.fallback_scanned_at || 0;
+        }
+      } catch (_) {}
+
+      const age = Math.max(0, Math.floor(Date.now()/1000 - Number(meta.scanned_at || 0)));
+      const ageText = age < 60 ? `${age}s 前` : `${Math.floor(age/60)} 分钟前`;
+            const sp = meta.scan_progress || {};
+      const tested = Number(sp.tested || 0);
+      const totalScan = Number(sp.total || 0);
+      const curNode = String(sp.current || "").trim();
+      const curNodes = Array.isArray(sp.current_list) ? sp.current_list.filter(Boolean) : [];
+      const curShow = curNodes.length ? curNodes.join(" · ") : (curNode && curNode !== "done" ? curNode : "");
+      const progressText = meta.scanning
+        ? (totalScan
+            ? ` · 扫描 ${tested}/${totalScan}${curShow ? " · 正在测 " + curShow : ""}`
+            : ` · 扫描中${curShow ? " · 正在测 " + curShow : ""}`)
+        : "";
+      const stale = age > 40 * 60;
+      const fbCount = Number(meta.fallback_available_count || 0);
+      const fbRegions = meta.fallback_by_region || {};
+      const fbText = fbCount > 0 ? ` · 备援代理 ${fbCount}` : "";
+      window.__fallbackByRegion = meta.fallback_by_region || {};
+      window.__scanProgress = meta.scan_progress || {};
+      window.__sharedScanning = !!meta.scanning;
+      document.getElementById("sharedAge").innerHTML =
+        `更新于 ${ageText} · 可用 ${meta.available_count || 0}/${meta.node_count || 0} · gen ${meta.generation || "-"}${progressText}${fbText}` +
+        (stale ? `<span class="stale-tag"> · 共享数据过旧</span>` : "");
+      const box = document.getElementById("sharedBox");
+      if (box) {
+        box.classList.toggle("stale", !!stale);
+        box.classList.toggle("scanning", !!meta.scanning);
+      }
+      const barWrap = document.getElementById("scanBarWrap");
+      const bar = document.getElementById("scanBar");
+      if (barWrap && bar) {
+        if (meta.scanning && totalScan > 0) {
+          barWrap.style.display = "block";
+          bar.style.width = `${Math.max(3, Math.min(100, Math.round(tested * 100 / totalScan)))}%`;
+        } else if (meta.scanning) {
+          barWrap.style.display = "block";
+          bar.style.width = "18%";
+        } else {
+          barWrap.style.display = "none";
+          bar.style.width = "0%";
+        }
+      }
+      const total = meta.country_total || {};
+      const avail = meta.country_available || {};
+      const keys = Object.keys(total).sort((a,b) => (avail[b]||0)-(avail[a]||0) || (total[b]||0)-(total[a]||0));
+      const preferred = ["JP","US","KR","RU","VN"];
+      const ordered = [...preferred.filter(k => keys.includes(k)), ...keys.filter(k => !preferred.includes(k))];
+      const ovpnChips = ordered.slice(0, 10).map(k =>
+        `<div class="shared-chip"><strong>${k}</strong> ${avail[k]||0}/${total[k]||0}</div>`
+      );
+      const fbMap = meta.fallback_by_region || fbRegions || {};
+      const fbKeys = Object.keys(fbMap).sort((a,b) => (fbMap[b]||0)-(fbMap[a]||0));
+      const fbChips = fbKeys.map(k =>
+        `<div class="shared-chip" style="border-color:rgba(240,171,252,.35)"><strong>备援 ${k}</strong> ${fbMap[k]||0}</div>`
+      );
+      const allChips = [...ovpnChips, ...fbChips];
+      document.getElementById("sharedGrid").innerHTML = allChips.join("") || `<div class="shared-chip">暂无共享数据</div>`;
+    }
+
+
+    // -------- view tabs + global proxy pool --------
+    let currentView = "regions";
+    let poolRows = [];
+    let poolLoadedAt = 0;
+
+    
+    function statusPill(status, extra) {
+      const s = status || "not_checked";
+      if (extra === "testing") return `<span class="st-pill testing">检测中</span>`;
+      if (extra === "queued") return `<span class="st-pill wait">排队中</span>`;
+      if (s === "available") return `<span class="st-pill ok">可用</span>`;
+      if (s === "unavailable") return `<span class="st-pill bad">不可用</span>`;
+      if (s === "soft_available") return `<span class="st-pill soft">弱可用</span>`;
+      return `<span class="st-pill wait">待检测</span>`;
+    }
+
+    function formatTs(ts) {
+      const t = Number(ts || 0);
+      if (!t) return "-";
+      try {
+        const d = new Date(t * 1000);
+        const p = n => String(n).padStart(2, "0");
+        return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+      } catch (_) { return "-"; }
+    }
+
+    function isLiveScanning(meta) {
+      const sp = (meta && meta.scan_progress) || window.__scanProgress || {};
+      const cur = String(sp.current || "");
+      const list = Array.isArray(sp.current_list) ? sp.current_list : [];
+      const flag = !!(meta && meta.scanning) || !!window.__sharedScanningRaw;
+      if (!flag) return false;
+      // 扫完后 current=done 且无 in-flight，不算扫描中
+      if ((cur === "done" || cur === "") && !list.length) {
+        const tested = Number(sp.tested || 0);
+        const total = Number(sp.total || 0);
+        if (total > 0 && tested >= total) return false;
+        if (cur === "done") return false;
+      }
+      // 超过 2 分钟无进度更新，视为卡死/已结束
+      const updated = Number(sp.updated_at || sp._published_at || 0);
+      if (updated && (Date.now() / 1000 - updated) > 120) return false;
+      return true;
+    }
+
+    function nextProbeInfo(row, meta) {
+      const interval = Number(meta?.check_interval_seconds || window.__checkInterval || 1260);
+      const nextScan = Number(meta?.next_scan_at || window.__nextScanAt || 0);
+      const probed = Number(row.probed_at || 0);
+      const status = row.probe_status || "not_checked";
+      const sp = window.__scanProgress || {};
+      const list = Array.isArray(sp.current_list) ? sp.current_list.map(String) : [];
+      const cur = String(sp.current || "");
+      const parts = cur && cur !== "done" ? cur.split(/\s*\|\s*/) : [];
+      const rid = String(row.id || "");
+      const live = isLiveScanning(meta || window.__poolMeta || {});
+      // 只有当前 in-flight 节点才是「检测中」
+      const testing = !!(live && rid && (list.includes(rid) || parts.includes(rid)));
+      if (testing) return { label: "正在检测…", ts: 0, testing: true, queued: false };
+
+      if (status === "not_checked" || !status) {
+        // 未测：显示待检测 + 预计下次周期，绝不标「排队中」除非它在 current_list
+        const when = nextScan ? formatTs(nextScan) : `约 ${Math.round(interval / 60)} 分钟内`;
+        return { label: `待纳入 · ${when}`, ts: nextScan, testing: false, queued: false };
+      }
+      const next = nextScan || (probed ? probed + interval : 0);
+      return { label: next ? formatTs(next) : "-", ts: next, testing: false, queued: false };
+    }
+
+    function ageText(ts) {
+      const t = Number(ts || 0);
+      if (!t) return "-";
+      const age = Math.max(0, Math.floor(Date.now()/1000 - t));
+      if (age < 60) return `${age}s 前`;
+      if (age < 3600) return `${Math.floor(age/60)}m 前`;
+      return `${Math.floor(age/3600)}h 前`;
+    }
+
+    function setView(view) {
+      currentView = view;
+      const reg = document.getElementById("viewRegions");
+      const pool = document.getElementById("viewPool");
+      const tabR = document.getElementById("tabRegions");
+      const tabP = document.getElementById("tabPool");
+      if (reg) reg.style.display = view === "regions" ? "" : "none";
+      if (pool) pool.style.display = view === "pool" ? "" : "none";
+      if (tabR) tabR.classList.toggle("active", view === "regions");
+      if (tabP) tabP.classList.toggle("active", view === "pool");
+      if (view === "pool") loadProxyPool(false);
+    }
+
+    function renderPoolStats(rows, meta, fbMeta) {
+      const ovpn = rows.filter(r => r.source !== "freeproxydb");
+      const fb = rows.filter(r => r.source === "freeproxydb");
+      const avail = ovpn.filter(r => r.probe_status === "available").length;
+      const unavail = ovpn.filter(r => r.probe_status === "unavailable").length;
+      const pending = ovpn.filter(r => !r.probe_status || r.probe_status === "not_checked").length;
+      const tested = avail + unavail + ovpn.filter(r => r.probe_status === "soft_available").length;
+      const total = ovpn.length;
+      const fbAvail = fb.filter(r => r.probe_status === "available").length || Number((fbMeta||{}).available_count || 0);
+
+      document.getElementById("poolOvpnTotal").textContent = String(total || meta?.node_count || 0);
+      document.getElementById("poolOvpnProgress").textContent = `${tested}/${total || 0}`;
+      document.getElementById("poolOvpnAvail").textContent = String(avail || meta?.available_count || 0);
+      document.getElementById("poolFbAvail").textContent = String(fbAvail);
+
+      const sp = meta?.scan_progress || {};
+      const st = Number(sp.tested || tested || 0);
+      const tt = Number(sp.total || total || 0);
+      const scanning = isLiveScanning(meta || {});
+      const pct = tt > 0 ? Math.max(0, Math.min(100, Math.round(st * 100 / tt))) : (total ? Math.round(tested * 100 / total) : 0);
+            const cur = String(sp.current || "").trim();
+      const curList = Array.isArray(sp.current_list) ? sp.current_list.filter(Boolean) : [];
+      const curText = curList.length ? curList.join(" · ") : (cur && cur !== "done" ? cur : "");
+      const batchInfo = (sp.batch && sp.batches) ? `批次 ${sp.batch}/${sp.batches}` : "";
+      document.getElementById("poolProgressText").textContent = scanning
+        ? `扫描进行中：本批 ${st}/${tt || "?"} · 全池待测 ${pending}${curText ? ` · 正在测 ${curText}` : ""}`
+        : `全池检测进度：已测 ${tested} · 待测 ${pending} · 可用 ${avail}`;
+      document.getElementById("poolProgressMeta").textContent = scanning
+        ? `${batchInfo ? batchInfo + " · " : ""}进度 ${pct}%${curText ? " · " + curText : ""}`
+        : `待测占比 ${total ? Math.round(pending*100/total) : 0}%`;
+      document.getElementById("poolProgressBar").style.width = `${Math.max(3, pct || (total ? Math.round(tested*100/total) : 0))}%`;
+    }
+
+    function filteredPoolRows() {
+      const q = (document.getElementById("poolSearch")?.value || "").trim().toLowerCase();
+      const region = document.getElementById("poolRegion")?.value || "";
+      const status = document.getElementById("poolStatus")?.value || "";
+      const source = document.getElementById("poolSource")?.value || "";
+      return poolRows.filter(r => {
+        if (region && r.region !== region) return false;
+        if (status && (r.probe_status || "not_checked") !== status) return false;
+        if (source === "vpngate" && r.source === "freeproxydb") return false;
+        if (source === "freeproxydb" && r.source !== "freeproxydb") return false;
+        if (!q) return true;
+        const hay = `${r.id||""} ${r.ip||""} ${r.country||""} ${r.region||""} ${r.protocol||""} ${r.probe_message||""}`.toLowerCase();
+        return hay.includes(q);
+      });
+    }
+
+    function renderPoolTable() {
+      const rows = filteredPoolRows();
+      const meta = window.__poolMeta || {};
+      rows.sort((a,b) => {
+        const spx = window.__scanProgress || {};
+        const list = Array.isArray(spx.current_list) ? spx.current_list.map(String) : [];
+        const cur = String(spx.current || "");
+        const parts = cur && cur !== "done" ? cur.split(/\s*\|\s*/) : [];
+        const rankTest = id => (list.includes(String(id)) || parts.includes(String(id))) ? 0 : 1;
+        const ta = rankTest(a.id), tb = rankTest(b.id);
+        if (ta !== tb) return ta - tb;
+        const rank = s => s === "not_checked" || !s ? 0 : s === "available" ? 1 : s === "soft_available" ? 2 : 3;
+        const ra = rank(a.probe_status), rb = rank(b.probe_status);
+        if (ra !== rb) return ra - rb;
+        if ((a.region||"") !== (b.region||"")) return String(a.region).localeCompare(String(b.region));
+        return (Number(a.latency_ms)||999999) - (Number(b.latency_ms)||999999);
+      });
+      const body = document.getElementById("poolBody");
+      if (!body) return;
+      if (!rows.length) {
+        body.innerHTML = `<tr><td colspan="12" class="empty">没有匹配的节点/代理</td></tr>`;
+        return;
+      }
+      const shown = rows.slice(0, 500);
+      body.innerHTML = shown.map(r => {
+        const src = r.source === "freeproxydb"
+          ? `<span class="src-tag fpdb">备援</span>`
+          : `<span class="src-tag ovpn">OpenVPN</span>`;
+        const proto = escapeHtml(r.protocol || (r.source === "freeproxydb" ? "http/socks" : (r.proto || "openvpn")));
+        const node = escapeHtml(r.ip || r.remote_host || r.id || "-");
+        const port = r.port || r.remote_port || "";
+        const latency = r.latency_ms ? `${r.latency_ms} ms` : (r.ping ? `${r.ping} ms*` : "-");
+        const q = r.quality_score != null ? `Q${r.quality_score}` : "-";
+        const note = escapeHtml(String(r.egress_ip || r.probe_message || r.operator || "").slice(0, 80) || "-");
+        const probedAt = Number(r.probed_at || 0);
+        const probedLabel = probedAt ? `${formatTs(probedAt)}<div class="sched">${ageText(probedAt)}</div>` : `<span class="sched">尚未检测</span>`;
+        const ni = nextProbeInfo(r, meta);
+        const nextLabel = ni.testing
+          ? `<span class="sched"><b>正在检测</b></span>`
+          : `<span class="sched">${escapeHtml(ni.label)}</span>`;
+        const st = ni.testing ? statusPill(r.probe_status, "testing") : statusPill(r.probe_status);
+        const rowClass = ni.testing ? "row-testing" : ((r.probe_status==="not_checked"||!r.probe_status) ? "row-pending" : "");
+        const canRetest = r.source !== "freeproxydb" && r.id;
+        const ops = canRetest
+          ? `<button class="sm" type="button" data-pool-retest="${escapeAttr(r.id)}">复测</button>`
+          : `<span class="sched">-</span>`;
+        const chk = canRetest
+          ? `<input type="checkbox" class="pool-row-check" value="${escapeAttr(r.id)}" />`
+          : "";
+        return `<tr class="${rowClass}" data-id="${escapeAttr(r.id || "")}">
+          <td class="chk">${chk}</td>
+          <td>${st}</td>
+          <td>${escapeHtml(r.region || regionBucket(r.country || r.country_short) || "-")}</td>
+          <td>${src}</td>
+          <td>${proto}</td>
+          <td class="mono">${node}${port ? ":" + escapeHtml(port) : ""}</td>
+          <td>${escapeHtml(latency)}</td>
+          <td>${escapeHtml(q)}</td>
+          <td title="${note}">${note}</td>
+          <td>${probedLabel}</td>
+          <td>${nextLabel}</td>
+          <td class="ops">${ops}</td>
+        </tr>`;
+      }).join("") + (rows.length > shown.length
+        ? `<tr><td colspan="12" class="empty">仅显示前 ${shown.length} 条，共 ${rows.length} 条匹配</td></tr>`
+        : "");
+    }
+
+
+
+    function selectedPoolIds() {
+      return Array.from(document.querySelectorAll(".pool-row-check:checked")).map(c => c.value).filter(Boolean);
+    }
+
+    async function retestPoolNodes(ids) {
+      ids = (ids || []).map(String).filter(Boolean);
+      if (!ids.length) {
+        toast("请先勾选要复测的 OpenVPN 节点（或点「复测全部待检测」）");
+        return;
+      }
+      if (ids.length > 20) {
+        toast("单次最多复测 20 个，已截取前 20");
+        ids = ids.slice(0, 20);
+      }
+      try {
+        toast(`开始复测 ${ids.length} 个节点…`);
+        addActivity(`节点池手动复测 ${ids.length} 个：${ids.slice(0,3).join(", ")}${ids.length>3?"…":""}`);
+        const res = await fetch(`${cleanOrigin}/api/scanner/retest_nodes`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids }),
+        });
+        const text = await res.text();
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; } catch (_) { data = { error: text }; }
+        if (!res.ok || data.ok === false) {
+          throw new Error(data.message || data.error || `HTTP ${res.status}`);
+        }
+        toast(data.message || "已开始复测");
+        // 轮询刷新，展示检测中
+        let n = 0;
+        const timer = setInterval(async () => {
+          n += 1;
+          await loadSharedMeta();
+          await loadProxyPool(true);
+          if (n >= 20 || !window.__sharedScanning) {
+            clearInterval(timer);
+            await loadProxyPool(true);
+            toast("复测刷新完成");
+          }
+        }, 3000);
+      } catch (err) {
+        toast(`复测失败：${err.message || err}`);
+        addActivity(`节点池复测失败：${err.message || err}`);
+      }
+    }
+
+    async function loadProxyPool(force = false) {
+      // avoid thrash: 8s cache unless force
+      if (!force && poolRows.length && Date.now() - poolLoadedAt < 8000) {
+        // 扫描中仍刷新 stats/进度文案
+        if (window.__sharedScanning) {
+          try {
+            const mRes = await fetch(`${cleanOrigin}/shared_meta.json`, { cache: "no-store" });
+            if (mRes.ok) {
+              const live = await mRes.json();
+              window.__scanProgress = live.scan_progress || {};
+              window.__sharedScanning = !!live.scanning;
+              renderPoolStats(poolRows, { ...(window.__poolMeta||{}), ...live }, window.__poolFbMeta || {});
+              renderPoolTable();
+            }
+          } catch (_) { renderPoolTable(); }
+        } else {
+          renderPoolTable();
+        }
+        return;
+      }
+      const body = document.getElementById("poolBody");
+      if (body && !poolRows.length) {
+        body.innerHTML = `<tr><td colspan="12" class="empty">正在加载共享节点池…</td></tr>`;
+      }
+      let nodes = [];
+      let proxies = [];
+      let meta = {};
+      let fbMeta = {};
+      try {
+        const [nRes, pRes, mRes, fRes] = await Promise.all([
+          fetch(`${cleanOrigin}/shared_nodes.json`, { cache: "no-store" }),
+          fetch(`${cleanOrigin}/shared_proxies.json`, { cache: "no-store" }),
+          fetch(`${cleanOrigin}/shared_meta.json`, { cache: "no-store" }),
+          fetch(`${cleanOrigin}/shared_proxies_meta.json`, { cache: "no-store" }),
+        ]);
+        if (nRes.ok) {
+          const raw = await nRes.json();
+          nodes = Array.isArray(raw) ? raw : [];
+        }
+        if (pRes.ok) {
+          const raw = await pRes.json();
+          proxies = Array.isArray(raw) ? raw : [];
+        }
+        if (mRes.ok) meta = await mRes.json();
+        if (fRes.ok) fbMeta = await fRes.json();
+      } catch (err) {
+        if (body) body.innerHTML = `<tr><td colspan="12" class="empty">加载失败：${escapeHtml(err.message || err)}</td></tr>`;
+        return;
+      }
+
+      // 合并实时扫描进度：shared_meta 已含 current；health 仅补字段
+      try {
+        const hRes = await fetch(`${cleanOrigin}/api/scanner/health`, { cache: "no-store" });
+        if (hRes.ok) {
+          const health = await hRes.json();
+          const hp = health.scan_progress || {};
+          const mp = meta.scan_progress || {};
+          const preferHp = Number(hp.updated_at || 0) > Number(mp.updated_at || 0);
+          meta = {
+            ...meta,
+            scanned_at: health.shared_scanned_at || meta.scanned_at,
+            generation: health.shared_generation || meta.generation,
+            node_count: health.shared_node_count || meta.node_count,
+            available_count: health.shared_available_count != null ? health.shared_available_count : meta.available_count,
+            scanning: !!(health.shared_scanning || health.is_scanning || meta.scanning),
+            scan_progress: preferHp ? { ...mp, ...hp } : { ...hp, ...mp },
+            country_total: health.shared_country_total || meta.country_total || {},
+            country_available: health.shared_country_available || meta.country_available || {},
+          };
+          if (health.fallback_available_count != null) {
+            fbMeta = {
+              ...fbMeta,
+              available_count: health.fallback_available_count,
+              by_region: health.fallback_by_region || fbMeta.by_region || {},
+            };
+          }
+        }
+      } catch (_) {}
+      window.__scanProgress = meta.scan_progress || {};
+      window.__sharedScanning = !!meta.scanning;
+
+      const ovpnRows = nodes.map(n => ({
+        ...n,
+        source: "vpngate",
+        region: regionBucket(n.country_short || n.country || n.region),
+        protocol: n.proto || n.protocol || "openvpn",
+        ip: n.ip || n.remote_host,
+        port: n.remote_port || n.port,
+      }));
+      const fbRows = proxies.map(p => ({
+        ...p,
+        source: "freeproxydb",
+        region: p.region || regionBucket(p.country),
+        protocol: p.protocol || "http",
+        ip: p.ip || p.host,
+        port: p.port,
+      }));
+      poolRows = [...ovpnRows, ...fbRows];
+      poolLoadedAt = Date.now();
+      window.__fallbackByRegion = (fbMeta && fbMeta.by_region) || {};
+      const leg = document.getElementById("poolLegend");
+      if (leg) {
+        leg.textContent = `默认展示全部来源：OpenVPN ${ovpnRows.length} + 备援 ${fbRows.length}. `
+          + (fbRows.length ? "筛选来源选「备援 / FreeProxyDB」可只看备援。" : "当前备援池为空，等待 scanner 下一轮 FreeProxyDB 扫描。")
+          + " 策略：OpenVPN 优先；节点不足用备援补充；无 VPN 时自动连备援。客户端始终用区域代理端口。";
+      }
+      window.__poolMeta = meta;
+      window.__poolFbMeta = fbMeta;
+      renderPoolStats(poolRows, meta, fbMeta);
+      renderPoolTable();
+    }
+
+    async function start() {
+      await loadRegions();
+      renderActivity();
+      await loadSharedMeta();
+      await loadFallbackProxies();
+      await loadAll();
+      document.getElementById("tabRegions")?.addEventListener("click", () => setView("regions"));
+      document.getElementById("tabPool")?.addEventListener("click", () => setView("pool"));
+      document.getElementById("poolRefresh")?.addEventListener("click", () => loadProxyPool(true));
+      document.getElementById("poolCheckAll")?.addEventListener("change", (e) => {
+        const on = !!e.target.checked;
+        document.querySelectorAll(".pool-row-check").forEach(c => { c.checked = on; });
+      });
+      document.getElementById("poolRetestSelected")?.addEventListener("click", () => retestPoolNodes(selectedPoolIds()));
+      document.getElementById("poolRetestPending")?.addEventListener("click", () => {
+        const ids = poolRows
+          .filter(r => r.source !== "freeproxydb" && (!r.probe_status || r.probe_status === "not_checked") && r.id)
+          .map(r => r.id)
+          .slice(0, 20);
+        retestPoolNodes(ids);
+      });
+      document.getElementById("poolBody")?.addEventListener("click", (ev) => {
+        const btn = ev.target.closest("[data-pool-retest]");
+        if (!btn) return;
+        const id = btn.getAttribute("data-pool-retest");
+        if (id) retestPoolNodes([id]);
+      });
+      ["poolSearch","poolRegion","poolStatus","poolSource"].forEach(id => {
+        document.getElementById(id)?.addEventListener("input", renderPoolTable);
+        document.getElementById(id)?.addEventListener("change", renderPoolTable);
+      });
+      setInterval(() => {
+        refreshLeft = Math.max(0, refreshLeft - 1);
+        document.getElementById("sumRefresh").textContent = formatCountdown(refreshLeft);
+        if (refreshLeft === 0 && !batchRunning) {
+          if (currentView === "pool") {
+            loadSharedMeta();
+            loadFallbackProxies();
+            loadProxyPool(true);
+            refreshLeft = 300;
+          } else {
+            loadAll();
+            loadSharedMeta();
+          }
+        }
+        // 扫描中：每 3 秒刷新进度与「正在测」；节点池页同步列表状态
+        const scanningNow = !!(window.__sharedScanning);
+        if (scanningNow && refreshLeft % 3 === 0) {
+          loadSharedMeta();
+          if (currentView === "pool") loadProxyPool(false);
+        } else if (currentView === "pool" && refreshLeft % 15 === 0) {
+          loadProxyPool(false);
+          loadSharedMeta();
+        }
+      }, 1000);
+    }
+
+    start();
+  </script>
+</body>
+</html>

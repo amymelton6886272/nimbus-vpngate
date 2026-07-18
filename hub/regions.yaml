@@ -1,0 +1,43 @@
+# 区域配置中心（Hub 只读；运行参数以 compose 环境变量为准）
+scanner:
+  service: nimbus-scanner
+  api_prefix: /api/scanner
+  note: 负责节点可用性扫描与共享池更新
+
+defaults:
+  role: worker
+  actions:
+    - connect_best
+    - test_proxy
+    - disconnect
+  advanced_actions:
+    - sync_shared
+    - sync_and_check
+
+regions:
+  - key: JP
+    slug: jp
+    proxyPort: 20001
+    country: JP
+  - key: US
+    slug: us
+    proxyPort: 20002
+    country: US
+    note: 节点稀缺，失败会冷却
+  - key: KR
+    slug: kr
+    proxyPort: 20003
+    country: KR
+  - key: RU
+    slug: ru
+    proxyPort: 20004
+    country: RU
+  - key: VN
+    slug: vn
+    proxyPort: 20005
+    country: VN
+    note: 常无可用节点
+  - key: OTHER
+    slug: other
+    proxyPort: 20006
+    exclude: [JP, US, KR, RU, VN]
